@@ -1,0 +1,41 @@
+
+> workflowcreator@0.0.0 lint
+> eslint .
+
+
+C:\Users\alexa\Documents\GitHub\workflowCreator\src\components\canvas\InfographicRenderer.tsx
+  9:11  error  'titleBar' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alexa\Documents\GitHub\workflowCreator\src\components\canvas\StepCard.tsx
+  11:53  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-explicit-any
+  17:26  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-explicit-any
+  57:14  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\alexa\Documents\GitHub\workflowCreator\src\components\canvas\StepCard.tsx:57:14
+  55 |         {IconComponent && (
+  56 |           <div className="mt-0.5 shrink-0 opacity-70">
+> 57 |             <IconComponent size={16} />
+     |              ^^^^^^^^^^^^^ This component is created during render
+  58 |           </div>
+  59 |         )}
+  60 |         <div className="flex-1 min-w-0">
+
+C:\Users\alexa\Documents\GitHub\workflowCreator\src\components\canvas\StepCard.tsx:39:25
+  37 |     .filter(Boolean) as RoleDefinition[];
+  38 |
+> 39 |   const IconComponent = getIcon(step.iconName);
+     |                         ^^^^^^^^^^^^^^^^^^^^^^ The component is created during render here
+  40 |
+  41 |   return (
+  42 |     <div  react-hooks/static-components
+
+C:\Users\alexa\Documents\GitHub\workflowCreator\src\store\useInfographicStore.ts
+  3:73  error  'createId' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\alexa\Documents\GitHub\workflowCreator\src\types\defaults.ts
+  12:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 6 problems (6 errors, 0 warnings)
+

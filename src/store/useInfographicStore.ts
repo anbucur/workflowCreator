@@ -1,0 +1,168 @@
+import { create } from 'zustand';
+import type { InfographicData, Phase, Step, RoleDefinition, TitleBarConfig, LayoutConfig, StepType } from '../types';
+import { createDefaultInfographic, createPhase, createStep, createRole } from '../types/defaults';
+
+interface InfographicStore extends InfographicData {
+  // Title bar
+  updateTitleBar: (updates: Partial<TitleBarConfig>) => void;
+
+  // Phases
+  addPhase: () => void;
+  removePhase: (phaseId: string) => void;
+  updatePhase: (phaseId: string, updates: Partial<Omit<Phase, 'id' | 'steps'>>) => void;
+  reorderPhases: (fromIndex: number, toIndex: number) => void;
+
+  // Steps
+  addStep: (phaseId: string, type?: StepType) => void;
+  removeStep: (phaseId: string, stepId: string) => void;
+  updateStep: (phaseId: string, stepId: string, updates: Partial<Step>) => void;
+  changeStepType: (phaseId: string, stepId: string, newType: StepType) => void;
+  reorderSteps: (fromPhaseId: string, fromIndex: number, toPhaseId: string, toIndex: number) => void;
+
+  // Roles
+  addRole: (name: string, color: string) => void;
+  removeRole: (roleId: string) => void;
+  updateRole: (roleId: string, updates: Partial<Omit<RoleDefinition, 'id'>>) => void;
+  toggleStepRole: (phaseId: string, stepId: string, roleId: string) => void;
+
+  // Layout
+  updateLayout: (updates: Partial<LayoutConfig>) => void;
+  setBackgroundColor: (color: string) => void;
+
+  // Bulk
+  loadInfographic: (data: InfographicData) => void;
+  resetToDefault: () => void;
+  getSnapshot: () => InfographicData;
+}
+
+function extractData(state: InfographicStore): InfographicData {
+  return {
+    id: state.id,
+    titleBar: state.titleBar,
+    roles: state.roles,
+    phases: state.phases,
+    layout: state.layout,
+    backgroundColor: state.backgroundColor,
+  };
+}
+
+const defaultData = createDefaultInfographic();
+
+export const useInfographicStore = create<InfographicStore>((set, get) => ({
+  ...defaultData,
+
+  updateTitleBar: (updates) => set((s) => ({ titleBar: { ...s.titleBar, ...updates } })),
+
+  addPhase: () => set((s) => ({ phases: [...s.phases, createPhase()] })),
+
+  removePhase: (phaseId) => set((s) => ({
+    phases: s.phases.filter((p) => p.id !== phaseId),
+  })),
+
+  updatePhase: (phaseId, updates) => set((s) => ({
+    phases: s.phases.map((p) => p.id === phaseId ? { ...p, ...updates } : p),
+  })),
+
+  reorderPhases: (fromIndex, toIndex) => set((s) => {
+    const phases = [...s.phases];
+    const [moved] = phases.splice(fromIndex, 1);
+    phases.splice(toIndex, 0, moved);
+    return { phases };
+  }),
+
+  addStep: (phaseId, type = 'standard') => set((s) => ({
+    phases: s.phases.map((p) =>
+      p.id === phaseId ? { ...p, steps: [...p.steps, createStep(type)] } : p
+    ),
+  })),
+
+  removeStep: (phaseId, stepId) => set((s) => ({
+    phases: s.phases.map((p) =>
+      p.id === phaseId ? { ...p, steps: p.steps.filter((st) => st.id !== stepId) } : p
+    ),
+  })),
+
+  updateStep: (phaseId, stepId, updates) => set((s) => ({
+    phases: s.phases.map((p) =>
+      p.id === phaseId
+        ? { ...p, steps: p.steps.map((st) => st.id === stepId ? { ...st, ...updates } as Step : st) }
+        : p
+    ),
+  })),
+
+  changeStepType: (phaseId, stepId, newType) => set((s) => ({
+    phases: s.phases.map((p) =>
+      p.id === phaseId
+        ? {
+          ...p,
+          steps: p.steps.map((st) => {
+            if (st.id !== stepId) return st;
+            const newStep = createStep(newType, {
+              id: st.id,
+              title: st.title,
+              description: st.description,
+              roleIds: st.roleIds,
+            });
+            return newStep;
+          }),
+        }
+        : p
+    ),
+  })),
+
+  reorderSteps: (fromPhaseId, fromIndex, toPhaseId, toIndex) => set((s) => {
+    const phases = s.phases.map((p) => ({ ...p, steps: [...p.steps] }));
+    const fromPhase = phases.find((p) => p.id === fromPhaseId);
+    const toPhase = phases.find((p) => p.id === toPhaseId);
+    if (!fromPhase || !toPhase) return {};
+    const [moved] = fromPhase.steps.splice(fromIndex, 1);
+    toPhase.steps.splice(toIndex, 0, moved);
+    return { phases };
+  }),
+
+  addRole: (name, color) => set((s) => ({
+    roles: [...s.roles, createRole(name, color)],
+  })),
+
+  removeRole: (roleId) => set((s) => ({
+    roles: s.roles.filter((r) => r.id !== roleId),
+    phases: s.phases.map((p) => ({
+      ...p,
+      steps: p.steps.map((st) => ({
+        ...st,
+        roleIds: st.roleIds.filter((rid) => rid !== roleId),
+      })),
+    })),
+  })),
+
+  updateRole: (roleId, updates) => set((s) => ({
+    roles: s.roles.map((r) => r.id === roleId ? { ...r, ...updates } : r),
+  })),
+
+  toggleStepRole: (phaseId, stepId, roleId) => set((s) => ({
+    phases: s.phases.map((p) =>
+      p.id === phaseId
+        ? {
+          ...p,
+          steps: p.steps.map((st) => {
+            if (st.id !== stepId) return st;
+            const hasRole = st.roleIds.includes(roleId);
+            return {
+              ...st,
+              roleIds: hasRole
+                ? st.roleIds.filter((rid) => rid !== roleId)
+                : [...st.roleIds, roleId],
+            };
+          }),
+        }
+        : p
+    ),
+  })),
+
+  updateLayout: (updates) => set((s) => ({ layout: { ...s.layout, ...updates } })),
+  setBackgroundColor: (color) => set({ backgroundColor: color }),
+
+  loadInfographic: (data) => set({ ...data }),
+  resetToDefault: () => set({ ...createDefaultInfographic() }),
+  getSnapshot: () => extractData(get()),
+}));
