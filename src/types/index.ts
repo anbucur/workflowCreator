@@ -10,6 +10,8 @@ export interface MeetingData {
   agendaItems: string[];
   facilitator?: string;
   duration?: string;
+  hasDecision?: boolean;
+  decision?: DecisionData;
 }
 
 export interface DecisionData {
@@ -45,7 +47,7 @@ export interface HandoffData {
 }
 
 export interface MilestoneData {
-  status: 'not-started' | 'in-progress' | 'completed';
+  status: 'none' | 'not-started' | 'in-progress' | 'completed';
   targetDate?: string;
   deliverables: string[];
 }
@@ -74,6 +76,8 @@ export interface CollaborationParticipant {
 export interface CollaborationData {
   participants: CollaborationParticipant[];
   iterative: boolean;
+  finalActionTitle?: string;
+  finalItems?: string[];
 }
 
 export interface TimelineEntry {
@@ -122,6 +126,12 @@ export interface BaseStep {
   description: string;
   iconName: string;
   roleIds: string[];
+  gridLayout?: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
 }
 
 export type Step = BaseStep & (
@@ -155,6 +165,11 @@ export interface TitleBarConfig {
   backgroundColor: string;
   textColor: string;
   fontSize: number;
+  subtitleFontSize?: number;
+  alignment?: 'left' | 'center' | 'right';
+  logoUrl?: string; // Base64 or absolute URL
+  titleFontFamily?: string;
+  subtitleFontFamily?: string;
 }
 
 export type LayoutDirection = 'horizontal' | 'vertical';
@@ -166,6 +181,18 @@ export interface LayoutConfig {
   padding: number;
   phaseMinWidth: number;
   cornerRadius: number;
+  /** 0–100. How strong the phase color tint is in the card area background (100 = full phase color). */
+  phaseTintOpacity: number;
+  /** 0–100. How much of the phase color bleeds into each card's background (100 = full phase color). */
+  cardTintOpacity: number;
+  /** 0–100. How abrupt the transition between adjacent phase colors is. 0 = smooth full-width blend, 100 = near-instant cut at the midpoint. */
+  phaseTransitionSharpness: number;
+  phaseTitleFontSize?: number;
+  phaseSubtitleFontSize?: number;
+  phaseTitleFontFamily?: string;
+  phaseSubtitleFontFamily?: string;
+  cardTitleFontFamily?: string;
+  cardContentFontFamily?: string;
 }
 
 export interface InfographicData {

@@ -7,29 +7,43 @@ interface Props {
 }
 
 export const MeetingContent: React.FC<Props> = ({ step }) => {
-  const { agendaItems, facilitator, duration } = step.data;
+  const { agendaItems, hasDecision, decision } = step.data;
   return (
-    <div className="space-y-1">
-      <p className="text-[10px] leading-snug opacity-80">{step.description}</p>
-      {agendaItems.length > 0 && (
-        <ol className="list-decimal list-inside text-[9px] space-y-0.5 ml-1 opacity-70">
-          {agendaItems.map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ol>
+    <div className="space-y-2">
+      {agendaItems && agendaItems.length > 0 && (
+        <div className="bg-white/50 rounded p-1.5 border border-slate-100 shadow-sm">
+          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Agenda</p>
+          <ul className="space-y-1">
+            {agendaItems.map((item, i) => (
+              <li key={i} className="flex items-start gap-1.5 card-text">
+                <span className="w-1 h-1 rounded-full bg-blue-400 shrink-0 mt-1.5" />
+                <span className="leading-tight">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
-      <div className="flex gap-1 flex-wrap mt-1">
-        {facilitator && (
-          <span className="text-[8px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
-            👤 {facilitator}
+
+
+      {hasDecision && decision && (
+        <div className="bg-amber-50/50 rounded p-1.5 border border-amber-100/50 shadow-sm">
+          <p className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mb-1">Decision Gate</p>
+          <ul className="space-y-1 mb-1.5">
+            {(decision.criteria || []).map((item, i) => (
+              <li key={i} className="flex items-start gap-1.5 card-text">
+                <span className="w-1 h-1 rounded-sm bg-amber-400 shrink-0 mt-1.5" />
+                <span className="leading-tight">{item}</span>
+              </li>
+            ))}
+          </ul>
+          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${decision.outcome === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+            decision.outcome === 'rejected' ? 'bg-red-100 text-red-700' :
+              'bg-amber-100 text-amber-700'
+            }`}>
+            {decision.outcome === 'approved' ? 'Approved' : decision.outcome === 'rejected' ? 'Rejected' : 'Pending'}
           </span>
-        )}
-        {duration && (
-          <span className="text-[8px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
-            ⏱ {duration}
-          </span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

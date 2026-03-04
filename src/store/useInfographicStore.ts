@@ -30,6 +30,7 @@ interface InfographicStore extends InfographicData {
   setBackgroundColor: (color: string) => void;
 
   // Bulk
+  applyTheme: (themeId: string) => void;
   loadInfographic: (data: InfographicData) => void;
   resetToDefault: () => void;
   getSnapshot: () => InfographicData;
@@ -46,123 +47,145 @@ function extractData(state: InfographicStore): InfographicData {
   };
 }
 
+import { temporal } from 'zundo';
+import { PREDEFINED_THEMES } from '../utils/themes';
+
 const defaultData = createDefaultInfographic();
 
-export const useInfographicStore = create<InfographicStore>((set, get) => ({
-  ...defaultData,
+export const useInfographicStore = create<InfographicStore>()(
+  temporal((set, get) => ({
+    ...defaultData,
 
-  updateTitleBar: (updates) => set((s) => ({ titleBar: { ...s.titleBar, ...updates } })),
+    updateTitleBar: (updates) => set((s) => ({ titleBar: { ...s.titleBar, ...updates } })),
 
-  addPhase: () => set((s) => ({ phases: [...s.phases, createPhase()] })),
+    addPhase: () => set((s) => ({ phases: [...s.phases, createPhase()] })),
 
-  removePhase: (phaseId) => set((s) => ({
-    phases: s.phases.filter((p) => p.id !== phaseId),
-  })),
+    removePhase: (phaseId) => set((s) => ({
+      phases: s.phases.filter((p) => p.id !== phaseId),
+    })),
 
-  updatePhase: (phaseId, updates) => set((s) => ({
-    phases: s.phases.map((p) => p.id === phaseId ? { ...p, ...updates } : p),
-  })),
+    updatePhase: (phaseId, updates) => set((s) => ({
+      phases: s.phases.map((p) => p.id === phaseId ? { ...p, ...updates } : p),
+    })),
 
-  reorderPhases: (fromIndex, toIndex) => set((s) => {
-    const phases = [...s.phases];
-    const [moved] = phases.splice(fromIndex, 1);
-    phases.splice(toIndex, 0, moved);
-    return { phases };
-  }),
+    reorderPhases: (fromIndex, toIndex) => set((s) => {
+      const phases = [...s.phases];
+      const [moved] = phases.splice(fromIndex, 1);
+      phases.splice(toIndex, 0, moved);
+      return { phases };
+    }),
 
-  addStep: (phaseId, type = 'standard') => set((s) => ({
-    phases: s.phases.map((p) =>
-      p.id === phaseId ? { ...p, steps: [...p.steps, createStep(type)] } : p
-    ),
-  })),
+    addStep: (phaseId, type = 'standard') => set((s) => ({
+      phases: s.phases.map((p) =>
+        p.id === phaseId ? { ...p, steps: [...p.steps, createStep(type)] } : p
+      ),
+    })),
 
-  removeStep: (phaseId, stepId) => set((s) => ({
-    phases: s.phases.map((p) =>
-      p.id === phaseId ? { ...p, steps: p.steps.filter((st) => st.id !== stepId) } : p
-    ),
-  })),
+    removeStep: (phaseId, stepId) => set((s) => ({
+      phases: s.phases.map((p) =>
+        p.id === phaseId ? { ...p, steps: p.steps.filter((st) => st.id !== stepId) } : p
+      ),
+    })),
 
-  updateStep: (phaseId, stepId, updates) => set((s) => ({
-    phases: s.phases.map((p) =>
-      p.id === phaseId
-        ? { ...p, steps: p.steps.map((st) => st.id === stepId ? { ...st, ...updates } as Step : st) }
-        : p
-    ),
-  })),
+    updateStep: (phaseId, stepId, updates) => set((s) => ({
+      phases: s.phases.map((p) =>
+        p.id === phaseId
+          ? { ...p, steps: p.steps.map((st) => st.id === stepId ? { ...st, ...updates } as Step : st) }
+          : p
+      ),
+    })),
 
-  changeStepType: (phaseId, stepId, newType) => set((s) => ({
-    phases: s.phases.map((p) =>
-      p.id === phaseId
-        ? {
-          ...p,
-          steps: p.steps.map((st) => {
-            if (st.id !== stepId) return st;
-            const newStep = createStep(newType, {
-              id: st.id,
-              title: st.title,
-              description: st.description,
-              roleIds: st.roleIds,
-            });
-            return newStep;
-          }),
-        }
-        : p
-    ),
-  })),
+    changeStepType: (phaseId, stepId, newType) => set((s) => ({
+      phases: s.phases.map((p) =>
+        p.id === phaseId
+          ? {
+            ...p,
+            steps: p.steps.map((st) => {
+              if (st.id !== stepId) return st;
+              const newStep = createStep(newType, {
+                id: st.id,
+                title: st.title,
+                description: st.description,
+                roleIds: st.roleIds,
+              });
+              return newStep;
+            }),
+          }
+          : p
+      ),
+    })),
 
-  reorderSteps: (fromPhaseId, fromIndex, toPhaseId, toIndex) => set((s) => {
-    const phases = s.phases.map((p) => ({ ...p, steps: [...p.steps] }));
-    const fromPhase = phases.find((p) => p.id === fromPhaseId);
-    const toPhase = phases.find((p) => p.id === toPhaseId);
-    if (!fromPhase || !toPhase) return {};
-    const [moved] = fromPhase.steps.splice(fromIndex, 1);
-    toPhase.steps.splice(toIndex, 0, moved);
-    return { phases };
-  }),
+    reorderSteps: (fromPhaseId, fromIndex, toPhaseId, toIndex) => set((s) => {
+      const phases = s.phases.map((p) => ({ ...p, steps: [...p.steps] }));
+      const fromPhase = phases.find((p) => p.id === fromPhaseId);
+      const toPhase = phases.find((p) => p.id === toPhaseId);
+      if (!fromPhase || !toPhase) return {};
+      const [moved] = fromPhase.steps.splice(fromIndex, 1);
+      toPhase.steps.splice(toIndex, 0, moved);
+      return { phases };
+    }),
 
-  addRole: (name, color) => set((s) => ({
-    roles: [...s.roles, createRole(name, color)],
-  })),
+    addRole: (name, color) => set((s) => ({
+      roles: [...s.roles, createRole(name, color)],
+    })),
 
-  removeRole: (roleId) => set((s) => ({
-    roles: s.roles.filter((r) => r.id !== roleId),
-    phases: s.phases.map((p) => ({
-      ...p,
-      steps: p.steps.map((st) => ({
-        ...st,
-        roleIds: st.roleIds.filter((rid) => rid !== roleId),
+    removeRole: (roleId) => set((s) => ({
+      roles: s.roles.filter((r) => r.id !== roleId),
+      phases: s.phases.map((p) => ({
+        ...p,
+        steps: p.steps.map((st) => ({
+          ...st,
+          roleIds: st.roleIds.filter((rid) => rid !== roleId),
+        })),
       })),
     })),
-  })),
 
-  updateRole: (roleId, updates) => set((s) => ({
-    roles: s.roles.map((r) => r.id === roleId ? { ...r, ...updates } : r),
-  })),
+    updateRole: (roleId, updates) => set((s) => ({
+      roles: s.roles.map((r) => r.id === roleId ? { ...r, ...updates } : r),
+    })),
 
-  toggleStepRole: (phaseId, stepId, roleId) => set((s) => ({
-    phases: s.phases.map((p) =>
-      p.id === phaseId
-        ? {
-          ...p,
-          steps: p.steps.map((st) => {
-            if (st.id !== stepId) return st;
-            const hasRole = st.roleIds.includes(roleId);
-            return {
-              ...st,
-              roleIds: hasRole
-                ? st.roleIds.filter((rid) => rid !== roleId)
-                : [...st.roleIds, roleId],
-            };
-          }),
-        }
-        : p
-    ),
-  })),
+    toggleStepRole: (phaseId, stepId, roleId) => set((s) => ({
+      phases: s.phases.map((p) =>
+        p.id === phaseId
+          ? {
+            ...p,
+            steps: p.steps.map((st) => {
+              if (st.id !== stepId) return st;
+              const hasRole = st.roleIds.includes(roleId);
+              return {
+                ...st,
+                roleIds: hasRole
+                  ? st.roleIds.filter((rid) => rid !== roleId)
+                  : [...st.roleIds, roleId],
+              };
+            }),
+          }
+          : p
+      ),
+    })),
 
-  updateLayout: (updates) => set((s) => ({ layout: { ...s.layout, ...updates } })),
-  setBackgroundColor: (color) => set({ backgroundColor: color }),
+    updateLayout: (updates) => set((s) => ({ layout: { ...s.layout, ...updates } })),
+    setBackgroundColor: (color) => set({ backgroundColor: color }),
 
-  loadInfographic: (data) => set({ ...data }),
-  resetToDefault: () => set({ ...createDefaultInfographic() }),
-  getSnapshot: () => extractData(get()),
-}));
+    applyTheme: (themeId) => set((s) => {
+      const theme = PREDEFINED_THEMES.find(t => t.id === themeId);
+      if (!theme) return {};
+
+      // Map through phases and assign colors in order
+      const newPhases = s.phases.map((phase, index) => {
+        // Use modulo to cycle through colors if there are more phases than colors
+        const colorIndex = index % theme.colors.length;
+        return {
+          ...phase,
+          backgroundColor: theme.colors[colorIndex],
+          textColor: theme.textColor,
+        };
+      });
+
+      return { phases: newPhases };
+    }),
+
+    loadInfographic: (data) => set({ ...data }),
+    resetToDefault: () => set({ ...createDefaultInfographic() }),
+    getSnapshot: () => extractData(get()),
+  })));

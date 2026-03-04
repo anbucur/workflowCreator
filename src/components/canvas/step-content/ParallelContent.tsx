@@ -11,7 +11,6 @@ export const ParallelContent: React.FC<Props> = ({ step, roles }) => {
   const { tracks } = step.data;
   return (
     <div className="space-y-1">
-      <p className="text-[10px] leading-snug opacity-80">{step.description}</p>
       <div className="flex gap-2 mt-1">
         {tracks.map((track) => (
           <div
@@ -19,9 +18,9 @@ export const ParallelContent: React.FC<Props> = ({ step, roles }) => {
             className="flex-1 rounded p-1.5 border border-current/10"
             style={{ backgroundColor: 'rgba(255,255,255,0.5)' }}
           >
-            <div className="font-semibold text-[9px] mb-0.5">{track.label}</div>
-            <p className="text-[8px] opacity-70 leading-tight">{track.description}</p>
-            <div className="flex gap-0.5 mt-1 flex-wrap">
+            <div className="card-text font-semibold mb-0.5 text-center">{track.label}</div>
+            <p className="card-text leading-tight text-center">{track.description}</p>
+            <div className="flex gap-0.5 mt-1 flex-wrap justify-center">
               {track.roleIds.map((rid) => {
                 const role = roles.find((r) => r.id === rid);
                 return role ? (

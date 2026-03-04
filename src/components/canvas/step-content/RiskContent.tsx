@@ -20,19 +20,18 @@ export const RiskContent: React.FC<Props> = ({ step }) => {
     <div className="space-y-1">
       <div className="flex items-center gap-1.5">
         <span
-          className="text-[8px] font-semibold px-1.5 py-0.5 rounded uppercase"
+          className="text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase"
           style={{ backgroundColor: style.bg, color: style.text }}
         >
           ⚠ {style.label}
         </span>
       </div>
-      <p className="text-[10px] leading-snug opacity-80">{step.description}</p>
-      <ul className="text-[9px] space-y-0.5 mt-1">
+      <ul className="space-y-0.5 mt-1">
         {risks.map((risk) => (
           <li key={risk.id}>
-            <span className="font-medium">• {risk.text}</span>
+            <span className="card-text font-medium">• {risk.text}</span>
             {risk.mitigation && (
-              <div className="ml-2 text-[8px] opacity-60 italic">↳ {risk.mitigation}</div>
+              <div className="ml-2 text-[9px] text-slate-500 italic">↳ {risk.mitigation}</div>
             )}
           </li>
         ))}

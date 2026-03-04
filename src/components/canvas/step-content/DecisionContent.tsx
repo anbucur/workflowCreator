@@ -17,11 +17,10 @@ export const DecisionContent: React.FC<Props> = ({ step }) => {
   const status = outcome ? STATUS_STYLES[outcome] : STATUS_STYLES.pending;
   return (
     <div className="space-y-1">
-      <p className="text-[10px] leading-snug opacity-80">{step.description}</p>
       {criteria.length > 0 && (
-        <ul className="text-[9px] space-y-0.5 ml-1">
+        <ul className="space-y-0.5 ml-1">
           {criteria.map((c, i) => (
-            <li key={i} className="flex items-center gap-1">
+            <li key={i} className="flex items-center gap-1 card-text">
               <span className="opacity-50">☐</span> {c}
             </li>
           ))}
@@ -29,7 +28,7 @@ export const DecisionContent: React.FC<Props> = ({ step }) => {
       )}
       {outcome && (
         <span
-          className="inline-block text-[8px] font-semibold px-1.5 py-0.5 rounded mt-1"
+          className="inline-block text-[9px] font-semibold px-1.5 py-0.5 rounded mt-1"
           style={{ backgroundColor: status.bg, color: status.text }}
         >
           {status.label}

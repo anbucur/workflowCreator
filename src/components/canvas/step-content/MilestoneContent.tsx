@@ -14,27 +14,36 @@ interface Props {
 
 export const MilestoneContent: React.FC<Props> = ({ step }) => {
   const { status, targetDate, deliverables } = step.data;
-  const statusStyle = STATUS_STYLES[status];
+
+  if (status === 'none' && !targetDate && deliverables.length === 0) {
+    return null;
+  }
+
+  const statusStyle = status !== 'none' ? STATUS_STYLES[status] : null;
+
   return (
     <div className="space-y-1">
-      <p className="text-[10px] leading-snug opacity-80">{step.description}</p>
-      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-        <span
-          className="text-[8px] font-semibold px-1.5 py-0.5 rounded"
-          style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
-        >
-          {statusStyle.label}
-        </span>
-        {targetDate && (
-          <span className="text-[8px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
-            📅 {targetDate}
-          </span>
-        )}
-      </div>
+      {(status !== 'none' || targetDate) && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {statusStyle && (
+            <span
+              className="text-[9px] font-semibold px-1.5 py-0.5 rounded"
+              style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
+            >
+              {statusStyle.label}
+            </span>
+          )}
+          {targetDate && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+              📅 {targetDate}
+            </span>
+          )}
+        </div>
+      )}
       {deliverables.length > 0 && (
-        <ul className="text-[9px] space-y-0.5 ml-1 mt-1 opacity-70">
+        <ul className="space-y-0.5 ml-1 mt-1">
           {deliverables.map((d, i) => (
-            <li key={i}>✓ {d}</li>
+            <li key={i} className="card-text">✓ {d}</li>
           ))}
         </ul>
       )}

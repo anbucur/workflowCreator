@@ -6,8 +6,6 @@ interface Props {
   roles: RoleDefinition[];
 }
 
-export const StandardContent: React.FC<Props> = ({ step }) => {
-  return (
-    <p className="text-[10px] leading-snug opacity-80">{step.description}</p>
-  );
+export const StandardContent: React.FC<Props> = () => {
+  return null; // description rendered by StepCard
 };

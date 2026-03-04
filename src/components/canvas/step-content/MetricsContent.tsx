@@ -10,13 +10,12 @@ export const MetricsContent: React.FC<Props> = ({ step }) => {
   const { metrics } = step.data;
   return (
     <div className="space-y-1">
-      <p className="text-[10px] leading-snug opacity-80">{step.description}</p>
       <div className="space-y-1.5 mt-1">
         {metrics.map((m) => {
           const pct = m.target ? Math.min((m.value / m.target) * 100, 100) : 0;
           return (
             <div key={m.id}>
-              <div className="flex justify-between text-[9px]">
+              <div className="flex justify-between card-text">
                 <span className="opacity-70">{m.label}</span>
                 <span className="font-semibold">
                   {m.value}{m.target ? `/${m.target}` : ''} {m.unit}
@@ -35,7 +34,7 @@ export const MetricsContent: React.FC<Props> = ({ step }) => {
               )}
               {m.format === 'badge' && (
                 <span
-                  className="inline-block text-[8px] font-bold px-1.5 py-0.5 rounded mt-0.5"
+                  className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded mt-0.5"
                   style={{
                     backgroundColor: pct >= 80 ? '#d1fae5' : pct >= 50 ? '#fef3c7' : '#fecaca',
                     color: pct >= 80 ? '#065f46' : pct >= 50 ? '#92400e' : '#991b1b',

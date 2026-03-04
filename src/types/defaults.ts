@@ -20,7 +20,7 @@ export function getDefaultStepData(type: StepType): unknown {
     case 'milestone': return { status: 'not-started', deliverables: ['Deliverable 1'] } as MilestoneData;
     case 'document': return { documents: [{ id: createId(), name: 'Document 1', docType: 'spec' }] } as DocumentData;
     case 'estimation': return { method: 'tshirt', value: 'M', breakdown: [] } as EstimationData;
-    case 'collaboration': return { participants: [{ roleId: '', action: 'Action 1' }], iterative: true } as CollaborationData;
+    case 'collaboration': return { participants: [], iterative: true, finalActionTitle: 'Final Output', finalItems: [] } as CollaborationData;
     case 'timeline': return { entries: [{ id: createId(), label: 'Task 1', startDate: '2025-01-01', endDate: '2025-01-15', color: '#3b82f6' }] } as TimelineData;
     case 'risk': return { severity: 'medium', risks: [{ id: createId(), text: 'Risk 1', mitigation: '' }] } as RiskData;
     case 'metrics': return { metrics: [{ id: createId(), label: 'Metric 1', value: 50, target: 100, unit: '%', format: 'progress' }] } as MetricsData;
@@ -35,6 +35,7 @@ export function createStep(type: StepType = 'standard', overrides?: Partial<Step
     iconName: type === 'standard' ? 'circle-dot' : ({ meeting: 'calendar', decision: 'scale', parallel: 'columns-2', checklist: 'list-checks', handoff: 'arrow-right-left', milestone: 'flag', document: 'file-text', estimation: 'calculator', collaboration: 'refresh-cw', timeline: 'gantt-chart', risk: 'alert-triangle', metrics: 'bar-chart-3' } as Record<string, string>)[type] || 'circle-dot',
     roleIds: [],
     type,
+    gridLayout: { x: 0, y: 9999, w: 12, h: 2 },
     ...overrides,
   };
   const data = getDefaultStepData(type);
@@ -57,20 +58,21 @@ export function createPhase(overrides?: Partial<Phase>): Phase {
 }
 
 export function createDefaultInfographic(): InfographicData {
-  const ba = createRole('BA', '#6366f1');
-  const dev = createRole('DEV', '#22c55e');
-  const qa = createRole('QA', '#f97316');
-
   return {
     id: createId(),
     titleBar: {
-      text: 'The SDLC Collaboration Framework: A 4-Phase Roadmap for BA, DEV, and QA',
-      subtitle: '',
+      text: 'New Project',
+      subtitle: 'A blank canvas for your workflow',
       backgroundColor: '#1e293b',
       textColor: '#ffffff',
-      fontSize: 20,
+      fontSize: 24,
+      subtitleFontSize: 14,
+      alignment: 'center',
+      logoUrl: '',
+      titleFontFamily: `'Inter', sans-serif`,
+      subtitleFontFamily: `'Inter', sans-serif`,
     },
-    roles: [ba, dev, qa],
+    roles: [],
     backgroundColor: '#f8fafc',
     layout: {
       direction: 'horizontal',
@@ -79,133 +81,16 @@ export function createDefaultInfographic(): InfographicData {
       padding: 20,
       phaseMinWidth: 280,
       cornerRadius: 12,
+      phaseTintOpacity: 15,
+      cardTintOpacity: 5,
+      phaseTransitionSharpness: 30,
+      phaseTitleFontSize: 11,
+      phaseSubtitleFontSize: 10,
+      phaseTitleFontFamily: `'Inter', sans-serif`,
+      phaseSubtitleFontFamily: `'Inter', sans-serif`,
+      cardTitleFontFamily: `'Inter', sans-serif`,
+      cardContentFontFamily: `'Inter', sans-serif`,
     },
-    phases: [
-      createPhase({
-        title: 'Phase 1: Pre-Dev Alignment & Scoping',
-        subtitle: 'Establishing the Business Need & High-Level Planning',
-        backgroundColor: '#fef3c7',
-        textColor: '#92400e',
-        steps: [
-          {
-            id: createId(), type: 'meeting', title: 'Establishing the Business Need',
-            description: 'The BA hosts a session to present the feature while Developers and QA ask clarifying questions to ensure the scope and business rules are fully understood before technical planning.',
-            iconName: 'presentation', roleIds: [ba.id, dev.id, qa.id],
-            data: { agendaItems: ['Feature presentation by BA', 'Scope clarification Q&A', 'Business rules review'], facilitator: 'BA', duration: '1 hour' },
-          } as Step,
-          {
-            id: createId(), type: 'estimation', title: 'T-Shirt Sizing & Release Strategy',
-            description: 'The team performs T-shirt sizing to estimate effort and determines if the work is a non-release item or if it requires a specific fix version.',
-            iconName: 'ruler', roleIds: [dev.id, qa.id],
-            data: { method: 'tshirt', value: '', breakdown: [{ label: 'Dev Effort', value: 'M' }, { label: 'QA Effort', value: 'S' }] },
-          } as Step,
-          {
-            id: createId(), type: 'decision', title: 'DRR Check',
-            description: 'Design Readiness Review checkpoint.',
-            iconName: 'scale', roleIds: [ba.id, dev.id, qa.id],
-            data: { criteria: ['Requirements documented', 'Scope agreed', 'Estimates complete'], outcome: 'pending' },
-          } as Step,
-          {
-            id: createId(), type: 'standard', title: 'Resource Allocation',
-            description: 'Assignment of the feature to Dev and QA resources. In the case of complex features, multiple resources can be assigned.',
-            iconName: 'users', roleIds: [dev.id, qa.id],
-          } as Step,
-        ],
-      }),
-      createPhase({
-        title: 'Phase 2: Technical Design & QA Planning',
-        subtitle: 'Deep-Dive Technical & Test Design (Parallel Tracks)',
-        backgroundColor: '#d1fae5',
-        textColor: '#065f46',
-        steps: [
-          {
-            id: createId(), type: 'meeting', title: 'Technical Review',
-            description: 'Developers and QA review requirements, actively clarifying business requirements with the BA team to ensure technical plans align with business needs.',
-            iconName: 'search', roleIds: [ba.id, dev.id, qa.id],
-            data: { agendaItems: ['Requirements walkthrough', 'Technical feasibility', 'Integration points'], facilitator: 'DEV Lead', duration: '1.5 hours' },
-          } as Step,
-          {
-            id: createId(), type: 'parallel', title: 'Parallel Execution Tracks',
-            description: 'Development and QA work simultaneously on their respective tracks.',
-            iconName: 'columns-2', roleIds: [dev.id, qa.id],
-            data: {
-              tracks: [
-                { id: createId(), label: 'DEV Track', description: 'User story creation — Developers create User Stories and technical designs.', roleIds: [dev.id] },
-                { id: createId(), label: 'QA Track', description: 'Test scenario & estimation — QA builds Test Scenarios and estimations.', roleIds: [qa.id] },
-              ],
-            },
-          } as Step,
-          {
-            id: createId(), type: 'decision', title: 'DRR Check',
-            description: 'Design Readiness Review after technical design.',
-            iconName: 'scale', roleIds: [ba.id, dev.id, qa.id],
-            data: { criteria: ['Technical design approved', 'Test scenarios ready', 'Estimates finalized'], outcome: 'pending' },
-          } as Step,
-        ],
-      }),
-      createPhase({
-        title: 'Phase 3: Backlog Readiness',
-        subtitle: 'Refinement & Shared Understanding',
-        backgroundColor: '#dbeafe',
-        textColor: '#1e40af',
-        steps: [
-          {
-            id: createId(), type: 'checklist', title: 'Technical Refinement',
-            description: 'Dev Cross-Check and Final Estimation — Developers review the created user stories and refine technical details to finalize estimations.',
-            iconName: 'list-checks', roleIds: [dev.id],
-            data: {
-              items: [
-                { id: createId(), text: 'Review user stories', checked: false },
-                { id: createId(), text: 'Refine technical details', checked: false },
-                { id: createId(), text: 'Finalize estimations', checked: false },
-              ]
-            },
-          } as Step,
-          {
-            id: createId(), type: 'decision', title: 'DRR Check',
-            description: 'Final design readiness review before sprint planning.',
-            iconName: 'scale', roleIds: [ba.id, dev.id, qa.id],
-            data: { criteria: ['Stories refined', 'Estimations final', 'Dependencies identified'], outcome: 'pending' },
-          } as Step,
-          {
-            id: createId(), type: 'meeting', title: 'Planning Session',
-            description: 'Planning work for next sprint — A critical meeting where BA, DEV, and QA collaborate to plan and define the work going into the next Sprint backlog.',
-            iconName: 'calendar', roleIds: [ba.id, dev.id, qa.id],
-            data: { agendaItems: ['Sprint capacity review', 'Story prioritization', 'Commitment discussion', 'Sprint goal definition'], facilitator: 'Scrum Master', duration: '2 hours' },
-          } as Step,
-        ],
-      }),
-      createPhase({
-        title: 'Phase 4: Build Phase',
-        subtitle: 'Execution, Validation, & Final Hand-off',
-        backgroundColor: '#fce7f3',
-        textColor: '#9d174d',
-        steps: [
-          {
-            id: createId(), type: 'standard', title: 'Development',
-            description: 'Developers write the code and build the feature according to the refined stories and technical designs.',
-            iconName: 'code', roleIds: [dev.id],
-          } as Step,
-          {
-            id: createId(), type: 'collaboration', title: 'QA Testing and Bug Resolution',
-            description: 'QA executes planned scenarios against the build, engaging in active back-and-forth collaboration with developers to resolve any identified bugs.',
-            iconName: 'refresh-cw', roleIds: [dev.id, qa.id],
-            data: {
-              participants: [
-                { roleId: qa.id, action: 'Executes test scenarios' },
-                { roleId: dev.id, action: 'Resolves identified bugs' },
-              ],
-              iterative: true,
-            },
-          } as Step,
-          {
-            id: createId(), type: 'milestone', title: '"Done" Status',
-            description: 'Once the feature passes all tests and meets the shared understanding of the team, it is marked as completed.',
-            iconName: 'check-circle', roleIds: [qa.id],
-            data: { status: 'not-started', deliverables: ['Feature passes all tests', 'Meets acceptance criteria', 'Team sign-off complete'] },
-          } as Step,
-        ],
-      }),
-    ],
+    phases: [],
   };
 }

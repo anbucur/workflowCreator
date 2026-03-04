@@ -14,13 +14,12 @@ export const DocumentContent: React.FC<Props> = ({ step }) => {
   const { documents } = step.data;
   return (
     <div className="space-y-1">
-      <p className="text-[10px] leading-snug opacity-80">{step.description}</p>
-      <ul className="text-[9px] space-y-0.5 mt-1">
+      <ul className="space-y-0.5 mt-1">
         {documents.map((doc) => (
-          <li key={doc.id} className="flex items-center gap-1">
+          <li key={doc.id} className="flex items-center gap-1 card-text">
             <span>{DOC_TYPE_ICONS[doc.docType] || DOC_TYPE_ICONS.default}</span>
             <span>{doc.name}</span>
-            <span className="text-[7px] opacity-50 uppercase">{doc.docType}</span>
+            <span className="text-[9px] text-slate-400 uppercase ml-auto">{doc.docType}</span>
           </li>
         ))}
       </ul>
