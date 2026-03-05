@@ -14,7 +14,7 @@ export function getDefaultStepData(type: StepType): unknown {
     case 'standard': return undefined;
     case 'meeting': return { agendaItems: ['Agenda item 1'], facilitator: '', duration: '1 hour' } as MeetingData;
     case 'decision': return { criteria: ['Criteria 1'], outcome: 'pending' } as DecisionData;
-    case 'parallel': return { tracks: [{ id: createId(), label: 'Track A', description: 'Description', roleIds: [] }, { id: createId(), label: 'Track B', description: 'Description', roleIds: [] }] } as ParallelData;
+    case 'parallel': return { tracks: [{ id: createId(), label: 'Track A', description: 'Description', roleIds: [], items: [] }, { id: createId(), label: 'Track B', description: 'Description', roleIds: [], items: [] }] } as ParallelData;
     case 'checklist': return { items: [{ id: createId(), text: 'Item 1', checked: false }] } as ChecklistData;
     case 'handoff': return { fromTeam: 'Team A', toTeam: 'Team B', artifacts: ['Deliverable 1'] } as HandoffData;
     case 'milestone': return { status: 'not-started', deliverables: ['Deliverable 1'] } as MilestoneData;
@@ -105,5 +105,6 @@ export function createDefaultInfographic(): InfographicData {
       phaseBackgroundPattern: 'none',
     },
     phases: [],
+    connectors: [],
   };
 }

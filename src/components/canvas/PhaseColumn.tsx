@@ -11,12 +11,11 @@ import { Plus } from 'lucide-react';
 
 const GridLayout = WidthProvider(ReactGridLayout);
 
-// Fine-grained grid: 8px rows, 8px margins → slots fit content tightly
+// Fine-grained grid: 8px rows, dynamic margins → slots fit content tightly
 const ROW_HEIGHT = 8;
-const GRID_MARGIN = 8;
 
-function pxToH(px: number): number {
-  return Math.max(1, Math.ceil((px + GRID_MARGIN) / (ROW_HEIGHT + GRID_MARGIN)));
+function pxToH(px: number, gap: number): number {
+  return Math.max(1, Math.ceil((px + gap) / (ROW_HEIGHT + gap)));
 }
 
 /** Linearly interpolate a hex colour toward white. ratio=0 → white, ratio=1 → full hex colour. */
@@ -48,6 +47,7 @@ interface CardWrapperProps {
   phaseId: string;
   roles: RoleDefinition[];
   cornerRadius: number;
+  stepGap: number;
   cardBackground?: string;
   phaseColor?: string;
 }
@@ -56,7 +56,7 @@ interface CardWrapperProps {
  * Wraps a StepCard and uses ResizeObserver to keep the grid slot h tightly
  * matched to actual rendered card height — eliminating empty space at the bottom.
  */
-const CardWrapper: React.FC<CardWrapperProps> = ({ step, phaseId, roles, cornerRadius, cardBackground, phaseColor }) => {
+const CardWrapper: React.FC<CardWrapperProps> = ({ step, phaseId, roles, cornerRadius, stepGap, cardBackground, phaseColor }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const stepRef = React.useRef(step);
   // Track last-sent h via ref to prevent rapid-fire store updates
@@ -77,7 +77,7 @@ const CardWrapper: React.FC<CardWrapperProps> = ({ step, phaseId, roles, cornerR
     const observer = new ResizeObserver((entries) => {
       const measured = entries[0].contentRect.height;
       if (measured < 10) return; // skip tiny/initial measurements
-      const newH = pxToH(measured);
+      const newH = pxToH(measured, stepGap);
       if (newH !== sentH.current) {
         sentH.current = newH; // optimistic update — prevents duplicate writes
         const currentStep = stepRef.current;
@@ -116,6 +116,7 @@ interface PhaseColumnProps {
 export const PhaseColumn: React.FC<PhaseColumnProps> = ({
   phase,
   roles,
+  stepGap,
   cornerRadius,
   phaseMinWidth,
   prevPhaseColor,
@@ -252,7 +253,7 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
           })}
           cols={currentCols}
           rowHeight={ROW_HEIGHT}
-          margin={[GRID_MARGIN, GRID_MARGIN]}
+          margin={[stepGap, stepGap]}
           onLayoutChange={(layout: any) => {
             layout.forEach((item: any) => {
               const step = phase.steps.find((s: any) => s.id === item.i);
@@ -311,6 +312,7 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
                   phaseId={phase.id}
                   roles={roles}
                   cornerRadius={cornerRadius}
+                  stepGap={stepGap}
                   cardBackground={cardBackground}
                   phaseColor={phase.backgroundColor}
                 />

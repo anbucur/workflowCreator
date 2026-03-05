@@ -2,6 +2,7 @@ import React from 'react';
 import { useUiStore } from '../../store/useUiStore';
 import { PhaseEditor } from '../sidebar/PhaseEditor';
 import { StepEditor } from '../sidebar/StepEditor';
+import { ConnectorEditor } from '../sidebar/ConnectorEditor';
 import { InfographicSettings } from '../sidebar/InfographicSettings';
 
 export const Sidebar: React.FC = () => {
@@ -11,6 +12,7 @@ export const Sidebar: React.FC = () => {
         <div className="h-full flex flex-col p-4">
             {selectedElement?.type === 'phase' && <PhaseEditor />}
             {selectedElement?.type === 'step' && <StepEditor />}
+            {selectedElement?.type === 'connector' && <ConnectorEditor />}
             {(!selectedElement || selectedElement.type === 'titleBar') && <InfographicSettings />}
         </div>
     );

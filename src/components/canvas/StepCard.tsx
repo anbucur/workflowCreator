@@ -3,6 +3,7 @@ import type { Step, RoleDefinition, MeetingData } from '../../types';
 import { useUiStore } from '../../store/useUiStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { StepContentRouter } from './step-content/StepContentRouter';
+import { ConnectorHandle } from './ConnectorHandle';
 import { STEP_TYPE_LABELS } from '../../types';
 
 // Dynamically render lucide icons by name
@@ -125,6 +126,11 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
       }}
       data-selection-ring={isSelected}
     >
+      {/* Connector handles */}
+      <ConnectorHandle stepId={step.id} position="top" />
+      <ConnectorHandle stepId={step.id} position="bottom" />
+      <ConnectorHandle stepId={step.id} position="left" />
+      <ConnectorHandle stepId={step.id} position="right" />
       {/* Header row: type badge and icon */}
       <div className="flex justify-between items-start mb-2">
         {(step.type !== 'standard' || step.customLabel) ? (

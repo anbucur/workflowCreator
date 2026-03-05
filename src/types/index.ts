@@ -24,6 +24,7 @@ export interface ParallelTrack {
   label: string;
   description: string;
   roleIds: string[];
+  items: string[];
 }
 
 export interface ParallelData {
@@ -211,6 +212,27 @@ export interface LayoutConfig {
   phaseBackgroundPattern: 'none' | 'dots' | 'grid' | 'diagonal';
 }
 
+export type ConnectorHandlePosition = 'top' | 'bottom' | 'left' | 'right';
+export type ConnectorType = 'straight' | 'curved' | 'step' | 'loop';
+export type ConnectorLineStyle = 'solid' | 'dashed' | 'dotted';
+export type ConnectorHeadType = 'none' | 'arrow' | 'diamond' | 'circle' | 'square';
+
+export interface Connector {
+  id: string;
+  sourceStepId: string;
+  sourceHandle: ConnectorHandlePosition;
+  targetStepId: string;
+  targetHandle: ConnectorHandlePosition;
+  type: ConnectorType;
+  color: string;
+  label?: string;
+  lineStyle: ConnectorLineStyle;
+  sourceHead: ConnectorHeadType;
+  targetHead: ConnectorHeadType;
+  strokeWidth: number;
+  waypoints?: { x: number; y: number }[];
+}
+
 export interface InfographicData {
   id: string;
   titleBar: TitleBarConfig;
@@ -218,12 +240,14 @@ export interface InfographicData {
   phases: Phase[];
   layout: LayoutConfig;
   backgroundColor: string;
+  connectors: Connector[];
 }
 
 export type SelectedElement =
   | { type: 'titleBar' }
   | { type: 'phase'; phaseId: string }
   | { type: 'step'; phaseId: string; stepId: string }
+  | { type: 'connector'; connectorId: string }
   | null;
 
 export type ExportFormat = 'png' | 'svg' | 'pdf';

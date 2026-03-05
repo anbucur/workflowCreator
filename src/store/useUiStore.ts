@@ -1,5 +1,10 @@
 import { create } from 'zustand';
-import type { SelectedElement } from '../types';
+import type { SelectedElement, ConnectorHandlePosition } from '../types';
+
+interface ConnectingFrom {
+  stepId: string;
+  handle: ConnectorHandlePosition;
+}
 
 interface UiStore {
   selectedElement: SelectedElement;
@@ -8,6 +13,8 @@ interface UiStore {
   panX: number;
   panY: number;
   isDraggingCard: boolean;
+  connectMode: boolean;
+  connectingFrom: ConnectingFrom | null;
 
   setSelectedElement: (el: SelectedElement) => void;
   setSidebarOpen: (open: boolean) => void;
@@ -15,6 +22,8 @@ interface UiStore {
   setPan: (x: number, y: number) => void;
   resetView: () => void;
   setIsDraggingCard: (dragging: boolean) => void;
+  setConnectMode: (on: boolean) => void;
+  setConnectingFrom: (from: ConnectingFrom | null) => void;
 }
 
 export const useUiStore = create<UiStore>((set) => ({
@@ -24,6 +33,8 @@ export const useUiStore = create<UiStore>((set) => ({
   panX: 0,
   panY: 0,
   isDraggingCard: false,
+  connectMode: false,
+  connectingFrom: null,
 
   setSelectedElement: (el) => set({ selectedElement: el, sidebarOpen: true }),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -31,4 +42,6 @@ export const useUiStore = create<UiStore>((set) => ({
   setPan: (x, y) => set({ panX: x, panY: y }),
   resetView: () => set({ zoom: 0.65, panX: 0, panY: 0 }),
   setIsDraggingCard: (dragging) => set({ isDraggingCard: dragging }),
+  setConnectMode: (on) => set({ connectMode: on, connectingFrom: on ? null : null }),
+  setConnectingFrom: (from) => set({ connectingFrom: from }),
 }));

@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { Route, ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database } from 'lucide-react';
+import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable } from 'lucide-react';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useExportStore } from '../../store/useExportStore';
 import { useStore } from 'zustand';
 import { exportInfographic } from '../../utils/export';
 import { ProjectExplorerModal } from './ProjectExplorerModal';
+import { useUiStore } from '../../store/useUiStore';
 
 export const Toolbar: React.FC = () => {
     const { undo, redo, pastStates, futureStates } = useStore(useInfographicStore.temporal);
@@ -15,6 +16,8 @@ export const Toolbar: React.FC = () => {
     const dropdownRef = React.useRef<HTMLDivElement>(null);
     const infographicRef = useExportStore((s) => s.infographicRef);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const connectMode = useUiStore((s) => s.connectMode);
+    const setConnectMode = useUiStore((s) => s.setConnectMode);
 
     // Close dropdown on outside click
     React.useEffect(() => {
@@ -71,10 +74,22 @@ export const Toolbar: React.FC = () => {
     return (
         <header className="h-12 border-b border-slate-200 bg-white flex items-center justify-between px-4 shrink-0 z-10">
             <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-[var(--color-primary)] rounded flex items-center justify-center text-white">
-                    <Route size={14} />
-                </div>
-                <h1 className="text-slate-900 font-bold text-sm tracking-tight">Workflow Studio</h1>
+                {/* Icon mark: gradient square with 3 stacked bars */}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="cadence-grad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="#7c3aed" />
+                            <stop offset="100%" stopColor="#3b82f6" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="24" height="24" rx="6" fill="url(#cadence-grad)" />
+                    <rect x="5" y="7" width="8" height="2" rx="1" fill="white" />
+                    <rect x="5" y="11" width="11" height="2" rx="1" fill="white" />
+                    <rect x="5" y="15" width="14" height="2" rx="1" fill="white" />
+                </svg>
+                <span className="font-bold text-slate-800 tracking-tight" style={{ fontSize: '15px', fontFamily: "'Inter', sans-serif", letterSpacing: '-0.01em' }}>
+                    Cadence
+                </span>
             </div>
 
             <div className="flex items-center gap-1">
@@ -85,6 +100,21 @@ export const Toolbar: React.FC = () => {
                     title="Open Project Explorer"
                 >
                     <Database size={16} className="text-blue-500" /> Projects
+                </button>
+
+                <div className="w-px h-4 bg-slate-200 mx-2" />
+
+                {/* Connect mode toggle */}
+                <button
+                    onClick={() => setConnectMode(!connectMode)}
+                    className={`p-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider border ${connectMode
+                            ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
+                    title={connectMode ? 'Exit Connect Mode' : 'Enter Connect Mode'}
+                >
+                    <Cable size={16} className={connectMode ? 'text-indigo-500' : 'text-slate-500'} />
+                    Connect
                 </button>
 
                 <div className="w-px h-4 bg-slate-200 mx-2" />

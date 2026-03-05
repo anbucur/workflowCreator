@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { InfographicData, Phase, Step, RoleDefinition, TitleBarConfig, LayoutConfig, StepType } from '../types';
-import { createDefaultInfographic, createPhase, createStep, createRole } from '../types/defaults';
+import type { InfographicData, Phase, Step, RoleDefinition, TitleBarConfig, LayoutConfig, StepType, Connector, ConnectorHandlePosition, ConnectorType } from '../types';
+import { createDefaultInfographic, createPhase, createStep, createRole, createId } from '../types/defaults';
 
 interface InfographicStore extends InfographicData {
   // Title bar
@@ -29,6 +29,14 @@ interface InfographicStore extends InfographicData {
   updateLayout: (updates: Partial<LayoutConfig>) => void;
   setBackgroundColor: (color: string) => void;
 
+  // Connectors
+  addConnector: (sourceStepId: string, sourceHandle: ConnectorHandlePosition, targetStepId: string, targetHandle: ConnectorHandlePosition, type?: ConnectorType) => void;
+  removeConnector: (connectorId: string) => void;
+  updateConnector: (connectorId: string, updates: Partial<Omit<Connector, 'id'>>) => void;
+  addConnectorWaypoint: (connectorId: string, index: number, point: { x: number; y: number }) => void;
+  updateConnectorWaypoint: (connectorId: string, index: number, point: { x: number; y: number }) => void;
+  removeConnectorWaypoint: (connectorId: string, index: number) => void;
+
   // Bulk
   applyTheme: (themeId: string) => void;
   loadInfographic: (data: InfographicData) => void;
@@ -44,6 +52,7 @@ function extractData(state: InfographicStore): InfographicData {
     phases: state.phases,
     layout: state.layout,
     backgroundColor: state.backgroundColor,
+    connectors: state.connectors || [],
   };
 }
 
@@ -85,6 +94,8 @@ export const useInfographicStore = create<InfographicStore>()(
       phases: s.phases.map((p) =>
         p.id === phaseId ? { ...p, steps: p.steps.filter((st) => st.id !== stepId) } : p
       ),
+      // cascade-delete connectors referencing this step
+      connectors: (s.connectors || []).filter((c) => c.sourceStepId !== stepId && c.targetStepId !== stepId),
     })),
 
     updateStep: (phaseId, stepId, updates) => set((s) => ({
@@ -166,6 +177,66 @@ export const useInfographicStore = create<InfographicStore>()(
 
     updateLayout: (updates) => set((s) => ({ layout: { ...s.layout, ...updates } })),
     setBackgroundColor: (color) => set({ backgroundColor: color }),
+
+    addConnector: (sourceStepId, sourceHandle, targetStepId, targetHandle, type = 'straight') => set((s) => {
+      // Don't add if going from/to the exact same handle
+      if (sourceStepId === targetStepId && sourceHandle === targetHandle) return s;
+
+      const isNightMode = s.layout.cardShadow === 'neon';
+      const defaultColor = isNightMode ? '#818cf8' : '#6366f1';
+
+      const currentConnectors = s.connectors || [];
+      const newConnector: Connector = {
+        id: createId(),
+        sourceStepId,
+        sourceHandle,
+        targetStepId,
+        targetHandle,
+        type,
+        color: defaultColor,
+        lineStyle: 'solid',
+        sourceHead: 'none',
+        targetHead: 'arrow',
+        strokeWidth: 2,
+        waypoints: [],
+      };
+      return { connectors: [...currentConnectors, newConnector] };
+    }),
+
+    removeConnector: (connectorId) => set((s) => ({
+      connectors: (s.connectors || []).filter((c) => c.id !== connectorId),
+    })),
+
+    updateConnector: (connectorId, updates) => set((s) => ({
+      connectors: (s.connectors || []).map((c) => c.id === connectorId ? { ...c, ...updates } : c),
+    })),
+
+    addConnectorWaypoint: (connectorId, index, point) => set((s) => ({
+      connectors: (s.connectors || []).map(c => {
+        if (c.id !== connectorId) return c;
+        const newWaypoints = [...(c.waypoints || [])];
+        newWaypoints.splice(index, 0, point);
+        return { ...c, waypoints: newWaypoints };
+      })
+    })),
+
+    updateConnectorWaypoint: (connectorId, index, point) => set((s) => ({
+      connectors: (s.connectors || []).map(c => {
+        if (c.id !== connectorId) return c;
+        const newWaypoints = [...(c.waypoints || [])];
+        newWaypoints[index] = point;
+        return { ...c, waypoints: newWaypoints };
+      })
+    })),
+
+    removeConnectorWaypoint: (connectorId, index) => set((s) => ({
+      connectors: (s.connectors || []).map(c => {
+        if (c.id !== connectorId) return c;
+        const newWaypoints = [...(c.waypoints || [])];
+        newWaypoints.splice(index, 1);
+        return { ...c, waypoints: newWaypoints };
+      })
+    })),
 
     applyTheme: (themeId) => set((s) => {
       const theme = PREDEFINED_THEMES.find(t => t.id === themeId);

@@ -4,6 +4,7 @@ import { useUiStore } from '../../store/useUiStore';
 import { TitleBar } from './TitleBar';
 import { PhaseColumn } from './PhaseColumn';
 import { Plus } from 'lucide-react';
+import { ConnectorOverlay } from './ConnectorOverlay';
 
 export const InfographicRenderer = React.forwardRef<HTMLDivElement>((_, _outerRef) => {
   const { roles, phases, layout } = useInfographicStore();
@@ -15,11 +16,12 @@ export const InfographicRenderer = React.forwardRef<HTMLDivElement>((_, _outerRe
   return (
     <div
       ref={resolvedRef}
-      className="infographic-root w-full shadow-2xl rounded-xl border border-slate-200 overflow-hidden bg-white"
+      className="infographic-root w-full shadow-2xl rounded-xl border border-slate-200 overflow-hidden bg-white relative"
       style={{ display: 'flex', flexDirection: 'column' }}
       onClick={() => setSelectedElement(null)}
     >
       <TitleBar />
+      <ConnectorOverlay />
 
       {/* Phase columns — each phase takes equal share */}
       <div
