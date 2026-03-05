@@ -22,7 +22,7 @@ export const ProjectExplorerModal: React.FC<Props> = ({ onClose }) => {
     const fetchProjects = async () => {
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:5173/api/projects');
+            const res = await fetch('/api/projects');
             const data = await res.json();
             setProjects(data);
         } catch (e) {
@@ -38,7 +38,7 @@ export const ProjectExplorerModal: React.FC<Props> = ({ onClose }) => {
 
     const handleLoad = async (id: string) => {
         try {
-            const res = await fetch(`http://localhost:5173/api/projects/${id}`);
+            const res = await fetch(`/api/projects/${id}`);
             const data = await res.json();
             loadInfographic(data);
             onClose();
@@ -52,7 +52,7 @@ export const ProjectExplorerModal: React.FC<Props> = ({ onClose }) => {
         e.stopPropagation();
         if (!confirm('Are you sure you want to delete this project?')) return;
         try {
-            await fetch(`http://localhost:5173/api/projects/${id}`, { method: 'DELETE' });
+            await fetch(`/api/projects/${id}`, { method: 'DELETE' });
             if (id === currentId) {
                 resetToDefault();
             }

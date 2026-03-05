@@ -34,22 +34,26 @@ export const PhaseEditor: React.FC = () => {
 
             <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-700">Title</label>
+                    <label htmlFor="phase-title" className="text-xs font-medium text-slate-700">Title</label>
                     <input
+                        id="phase-title"
                         type="text"
                         value={phase.title}
                         onChange={(e) => updatePhase(phase.id, { title: e.target.value })}
                         className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
+                        placeholder="Enter phase title"
                     />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-700">Subtitle</label>
+                    <label htmlFor="phase-subtitle" className="text-xs font-medium text-slate-700">Subtitle</label>
                     <input
+                        id="phase-subtitle"
                         type="text"
                         value={phase.subtitle}
                         onChange={(e) => updatePhase(phase.id, { subtitle: e.target.value })}
                         className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
+                        placeholder="Enter phase subtitle"
                     />
                 </div>
 

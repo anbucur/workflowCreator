@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm audit)",
+      "Bash(npm outdated)",
+      "Bash(npm audit fix)",
+      "Bash(grep -n \"localStorage\\\\|sessionStorage\" /c/Users/alexa/Documents/GitHub/workflowCreator/src/**/*.ts*)",
+      "Bash(grep -n \"http://localhost\\\\|http://\" /c/Users/alexa/Documents/GitHub/workflowCreator/src/**/*.tsx /c/Users/alexa/Documents/GitHub/workflowCreator/src/**/*.ts)",
+      "Bash(xargs grep \"http://localhost\\\\|http://\")",
+      "Bash(npm update)",
+      "Bash(npm install better-sqlite3 @types/better-sqlite3 --save)",
+      "Bash(npm ls better-sqlite3)",
+      "Bash(npm uninstall sqlite3)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm install lucide-react@latest @types/node@latest)"
+    ]
+  }
+}

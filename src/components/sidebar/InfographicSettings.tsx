@@ -176,11 +176,21 @@ export const InfographicSettings: React.FC = () => {
                             <span className="text-[10px] text-slate-400">PNG, JPG, SVG</span>
                             <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/png,image/jpeg,image/svg+xml"
                                 className="hidden"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (!file) return;
+                                    const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2MB
+                                    if (file.size > MAX_LOGO_SIZE) {
+                                        alert('Logo file must be under 2MB.');
+                                        return;
+                                    }
+                                    const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml'];
+                                    if (!allowedTypes.includes(file.type)) {
+                                        alert('Only PNG, JPG, and SVG files are allowed.');
+                                        return;
+                                    }
                                     const reader = new FileReader();
                                     reader.onload = (event) => {
                                         updateTitleBar({ logoUrl: event.target?.result as string });

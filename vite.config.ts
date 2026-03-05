@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 import express from 'express';
-import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -11,63 +11,112 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const dbPath = join(__dirname, 'workflow.sqlite');
 
-const db = new sqlite3.Database(dbPath);
-db.run(`CREATE TABLE IF NOT EXISTS workflows (id TEXT PRIMARY KEY, data TEXT)`);
+const db = new Database(dbPath);
+db.pragma('journal_mode = WAL');
+db.exec(`CREATE TABLE IF NOT EXISTS workflows (id TEXT PRIMARY KEY, data TEXT)`);
+
+// Input validation helpers
+const isValidId = (id: unknown): id is string =>
+  typeof id === 'string' && id.length > 0 && id.length <= 100 && /^[\w-]+$/.test(id);
+
+const isValidName = (name: unknown): name is string =>
+  typeof name === 'string' && name.length <= 500;
+
+const MAX_DATA_SIZE = 5 * 1024 * 1024; // 5MB max for project data
 
 const apiPlugin = () => ({
   name: 'api-plugin',
   configureServer(server: any) {
     const apiApp = express();
-    apiApp.use(express.json({ limit: '50mb' }));
+    apiApp.use(express.json({ limit: '5mb' }));
+
+    // Security headers
+    apiApp.use((_req: any, res: any, next: any) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('X-Frame-Options', 'DENY');
+      res.setHeader('X-XSS-Protection', '1; mode=block');
+      res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+      next();
+    });
 
     // Init DB Migrations
-    db.run(`CREATE TABLE IF NOT EXISTS projects (
+    db.exec(`CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
       name TEXT,
       updated_at INTEGER,
       data TEXT
-    )`, () => {
-      // Migrate from 'workflows' table if exists and 'projects' is empty
-      db.get(`SELECT count(*) as count FROM projects`, (err: any, row: any) => {
-        if (!err && row && row.count === 0) {
-          db.run(`INSERT INTO projects (id, name, updated_at, data) SELECT id, 'Imported Project', strftime('%s','now') * 1000, data FROM workflows`);
-        }
-      });
-    });
+    )`);
 
-    apiApp.get('/projects', (req, res) => {
-      db.all('SELECT id, name, updated_at FROM projects ORDER BY updated_at DESC', (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+    // Migrate from 'workflows' table if exists and 'projects' is empty
+    const countRow = db.prepare('SELECT count(*) as count FROM projects').get() as any;
+    if (countRow && countRow.count === 0) {
+      db.exec(`INSERT INTO projects (id, name, updated_at, data) SELECT id, 'Imported Project', strftime('%s','now') * 1000, data FROM workflows`);
+    }
+
+    // Prepared statements for performance and safety
+    const listProjects = db.prepare('SELECT id, name, updated_at FROM projects ORDER BY updated_at DESC');
+    const getProject = db.prepare('SELECT data FROM projects WHERE id = ?');
+    const upsertProject = db.prepare(
+      `INSERT INTO projects (id, name, updated_at, data) VALUES (?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at, data = excluded.data`
+    );
+    const deleteProject = db.prepare('DELETE FROM projects WHERE id = ?');
+
+    apiApp.get('/projects', (_req, res) => {
+      try {
+        const rows = listProjects.all();
         res.json(rows || []);
-      });
+      } catch {
+        res.status(500).json({ error: 'Failed to list projects' });
+      }
     });
 
     apiApp.get('/projects/:id', (req, res) => {
-      db.get('SELECT data FROM projects WHERE id = ?', [req.params.id], (err, row: any) => {
-        if (err) return res.status(500).json({ error: err.message });
+      if (!isValidId(req.params.id)) {
+        return res.status(400).json({ error: 'Invalid project ID' });
+      }
+      try {
+        const row = getProject.get(req.params.id) as any;
         if (!row || !row.data) return res.status(404).json({ error: 'Not found' });
-        try {
-          res.json(JSON.parse(row.data));
-        } catch { res.status(500).json({ error: 'Parse Error' }); }
-      });
+        res.json(JSON.parse(row.data));
+      } catch {
+        res.status(500).json({ error: 'Failed to load project' });
+      }
     });
 
     apiApp.post('/projects', (req, res) => {
       const { id, name, data } = req.body;
-      if (!id || !data) return res.status(400).json({ error: 'Missing id or data' });
-      const query = `INSERT INTO projects (id, name, updated_at, data) VALUES (?, ?, ?, ?)
-                     ON CONFLICT(id) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at, data = excluded.data`;
-      db.run(query, [id, name || 'Untitled', Date.now(), JSON.stringify(data)], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+      if (!isValidId(id)) {
+        return res.status(400).json({ error: 'Invalid or missing project ID' });
+      }
+      if (!data || typeof data !== 'object') {
+        return res.status(400).json({ error: 'Missing or invalid data' });
+      }
+      if (name !== undefined && !isValidName(name)) {
+        return res.status(400).json({ error: 'Invalid project name' });
+      }
+      const serialized = JSON.stringify(data);
+      if (serialized.length > MAX_DATA_SIZE) {
+        return res.status(413).json({ error: 'Project data too large' });
+      }
+      try {
+        upsertProject.run(id, name || 'Untitled', Date.now(), serialized);
         res.json({ success: true });
-      });
+      } catch {
+        res.status(500).json({ error: 'Failed to save project' });
+      }
     });
 
     apiApp.delete('/projects/:id', (req, res) => {
-      db.run('DELETE FROM projects WHERE id = ?', [req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+      if (!isValidId(req.params.id)) {
+        return res.status(400).json({ error: 'Invalid project ID' });
+      }
+      try {
+        deleteProject.run(req.params.id);
         res.json({ success: true });
-      });
+      } catch {
+        res.status(500).json({ error: 'Failed to delete project' });
+      }
     });
 
     server.middlewares.use('/api', apiApp);

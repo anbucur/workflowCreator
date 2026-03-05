@@ -1,73 +1,237 @@
-# React + TypeScript + Vite
+# Cadence
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A visual workflow infographic editor for creating professional, export-ready process diagrams. Build multi-phase workflows with 13 step types, customizable themes, role management, and advanced connectors — all from a drag-and-drop canvas.
 
-Currently, two official plugins are available:
+![React](https://img.shields.io/badge/React-19.2-blue?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-7.3-purple?logo=vite)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.2-blue?logo=tailwindcss)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Table of Contents
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Step Types](#step-types)
+- [Themes](#themes)
+- [Export Formats](#export-formats)
+- [Customization](#customization)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [Scripts](#scripts)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Visual Canvas Editor** — Drag-and-drop phases and steps on an interactive canvas with horizontal or vertical layout
+- **13 Step Types** — Standard, Meeting, Decision Gate, Parallel Tracks, Checklist, Handoff, Milestone, Document, Estimation, Collaboration Loop, Timeline, Risk/Warning, and Metrics/KPI
+- **Advanced Connectors** — Straight, curved, step, and loop connector types with customizable arrowheads, labels, colors, and manual waypoints
+- **Connect Mode** — Click-to-connect steps with 4-handle connection points (top, bottom, left, right)
+- **Phase Management** — Unlimited phases with custom titles, subtitles, colors, and drag-and-drop reordering
+- **Role System** — Create roles with custom colors and assign them to steps, displayed as colored badges
+- **5 Predefined Themes** — Ocean Depth, Sunset Glow, Forest Canopy, Corporate Clean, Monochrome Slate (plus custom freestyle)
+- **Export** — PNG (2x resolution), SVG, PDF (auto orientation), and JSON
+- **Export Preview** — Interactive preview modal before downloading
+- **Project Persistence** — Auto-save to SQLite database with debounced writes and a project explorer for managing multiple workflows
+- **JSON Import/Export** — Save and load projects as validated JSON files
+- **Undo/Redo** — Full history tracking up to 50 states
+- **Deep Customization** — Fonts, colors, shadows, borders, tinting, background patterns, and more
+- **141 Icons** — Curated icon library across 12 categories from Lucide
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) 18+
+- npm
+
+### Installation
+
+```bash
+git clone https://github.com/your-username/workflowCreator.git
+cd workflowCreator
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser. The backend API and SQLite database start automatically with the dev server.
+
+### Production Build
+
+```bash
+npm run build
+npm run preview
+```
+
+---
+
+## Step Types
+
+| Type | Icon | Description |
+| ------ | ------ | ------------- |
+| **Standard** | `circle-dot` | Basic workflow step with optional custom label |
+| **Meeting** | `calendar` | Agenda items, facilitator, duration, decision flag |
+| **Decision Gate** | `scale` | Criteria list with outcome status (pending/approved/rejected) |
+| **Parallel Tracks** | `columns-2` | Multiple concurrent work streams |
+| **Checklist** | `list-checks` | Itemized checklist with completion tracking |
+| **Handoff** | `arrow-right-left` | Transfer between teams with artifact list |
+| **Milestone** | `flag` | Status tracking, target date, deliverables |
+| **Document** | `file-text` | Documents and artifacts produced |
+| **Estimation** | `calculator` | T-shirt, story points, or hours estimation |
+| **Collaboration Loop** | `refresh-cw` | Iterative collaboration between roles |
+| **Timeline** | `gantt-chart` | Gantt-style entries with date ranges and colors |
+| **Risk/Warning** | `alert-triangle` | Severity levels with risk descriptions and mitigations |
+| **Metrics/KPI** | `bar-chart-3` | Key performance indicators with value, target, and unit |
+
+---
+
+## Themes
+
+Five built-in themes that apply coordinated colors across all phases:
+
+| Theme | Palette |
+| ------- | --------- |
+| **Ocean Depth** | Cool blues from light sky to deep ocean |
+| **Sunset Glow** | Warm yellows through oranges to deep reds |
+| **Forest Canopy** | Fresh mint to deep forest greens |
+| **Corporate Clean** | Professional multi-color palette |
+| **Monochrome Slate** | Neutral grayscale tones |
+
+Select **Custom** to use freestyle per-phase colors with 10 built-in color presets.
+
+---
+
+## Export Formats
+
+| Format | Details |
+| -------- | --------- |
+| **PNG** | High-resolution raster image (2x pixel ratio) |
+| **SVG** | Scalable vector with full preservation |
+| **PDF** | Auto landscape/portrait orientation, properly dimensioned |
+| **JSON** | Full project data for backup and sharing |
+
+Use the **Export with Preview** option to inspect the output before downloading.
+
+---
+
+## Customization
+
+### Title Bar
+
+- Main title and subtitle text, fonts, and sizes
+- Background and text colors
+- Alignment (left, center, right)
+- Optional logo upload (PNG, JPG, SVG)
+
+### Canvas & Phases
+
+- Canvas background color
+- Phase title/subtitle fonts and sizes
+- Background patterns (dots, grid, diagonal lines)
+- Phase tint opacity, card tint opacity, color blend sharpness
+
+### Cards
+
+- Shadow styles: none, soft, medium, hard, neon
+- Border styles: none, solid, dashed, dotted (with adjustable width)
+- Title and body fonts and sizes
+- Step type label customization (color, font, size, phase-matching)
+- Toggle step icons on/off
+
+### Connectors
+
+- Types: straight, curved, step, loop
+- Line styles: solid, dashed, dotted
+- Arrowheads: none, arrow, diamond, circle, square
+- Custom stroke width, color, and labels
+- Draggable waypoints for manual routing
+
+### Roles
+
+- Unlimited roles with custom name, badge color, and text color
+- Assign multiple roles per step
+
+---
+
+## Project Structure
+
+```text
+src/
+├── components/
+│   ├── canvas/                  # Canvas rendering
+│   │   ├── step-content/        # 13 step type renderers
+│   │   ├── ConnectorHandle.tsx   # Connection point handles
+│   │   ├── ConnectorOverlay.tsx  # SVG connector layer
+│   │   ├── InfographicRenderer.tsx
+│   │   ├── PhaseColumn.tsx
+│   │   ├── StepCard.tsx
+│   │   └── TitleBar.tsx
+│   ├── layout/                  # App shell, toolbar, sidebar
+│   │   ├── AppShell.tsx
+│   │   ├── Canvas.tsx
+│   │   ├── ProjectExplorerModal.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── Toolbar.tsx
+│   ├── sidebar/                 # Property editors
+│   │   ├── step-editors/        # Type-specific data editors
+│   │   ├── ConnectorEditor.tsx
+│   │   ├── InfographicSettings.tsx
+│   │   ├── PhaseEditor.tsx
+│   │   ├── RoleManager.tsx
+│   │   └── StepEditor.tsx
+│   ├── shared/                  # Reusable UI components
+│   └── export/                  # Export preview modal
+├── store/                       # Zustand state stores
+│   ├── useInfographicStore.ts   # Main app state
+│   ├── useUiStore.ts            # UI & selection state
+│   ├── useHistoryStore.ts       # Undo/redo (Zundo)
+│   └── useExportStore.ts        # Export state
+├── types/
+│   ├── index.ts                 # Core type definitions
+│   └── defaults.ts              # Default data generators
+├── utils/
+│   ├── colors.ts                # Color presets
+│   ├── export.ts                # PNG/SVG/PDF export logic
+│   ├── icons.ts                 # 141 icons across 12 categories
+│   └── themes.ts                # Theme definitions
+├── App.tsx                      # Root component with auto-save
+├── main.tsx                     # Entry point
+└── index.css                    # Global styles
+```
+
+---
+
+## Tech Stack
+
+| Category | Technology |
+| ---------- | ----------- |
+| **Framework** | React 19.2 |
+| **Language** | TypeScript 5.9 |
+| **Build** | Vite 7.3 |
+| **Styling** | Tailwind CSS 4.2 |
+| **State** | Zustand 5.0 + Zundo (undo/redo) |
+| **Drag & Drop** | @dnd-kit |
+| **Database** | better-sqlite3 (via Express 5 API) |
+| **Export** | html-to-image + jsPDF |
+| **Icons** | Lucide React |
+| **Color Picker** | react-colorful |
+
+---
+
+## Scripts
+
+| Command | Description |
+| --------- | ------------- |
+| `npm run dev` | Start development server with hot reload |
+| `npm run build` | Type-check and build for production |
+| `npm run preview` | Preview the production build |
+| `npm run lint` | Run ESLint |

@@ -55,10 +55,23 @@ export const Toolbar: React.FC = () => {
     const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        const MAX_IMPORT_SIZE = 10 * 1024 * 1024; // 10MB
+        if (file.size > MAX_IMPORT_SIZE) {
+            alert('Import file must be under 10MB.');
+            return;
+        }
+        if (!file.name.endsWith('.json')) {
+            alert('Only .json files are supported.');
+            return;
+        }
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const data = JSON.parse(event.target?.result as string);
+                if (!data || typeof data !== 'object' || !data.id || !data.phases) {
+                    alert('Invalid project file: missing required fields (id, phases).');
+                    return;
+                }
                 useInfographicStore.getState().loadInfographic(data);
             } catch (error) {
                 console.error('Failed to parse JSON', error);

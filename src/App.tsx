@@ -3,7 +3,7 @@ import { AppShell } from './components/layout/AppShell';
 import { useInfographicStore } from './store/useInfographicStore';
 import debounce from 'lodash.debounce';
 
-const BACKEND_URL = 'http://localhost:5173/api/projects';
+const BACKEND_URL = '/api/projects';
 
 function App() {
   const [loading, setLoading] = useState(true);

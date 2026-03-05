@@ -110,7 +110,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
 
   return (
     <div
-      className={`glass h-fit flex flex-col p-3 cursor-pointer transition-all hover:-translate-y-0.5 relative group ${isSelected ? 'selection-ring z-10' : ''} ${layout.cardShadow !== 'neon' ? shadowClass : ''}`}
+      className={`glass h-fit flex flex-col p-3 cursor-pointer transition-all hover:-translate-y-0.5 relative group ${isSelected ? 'z-10' : ''} ${layout.cardShadow !== 'neon' ? shadowClass : ''}`}
       style={{
         borderRadius: `${Math.max(cornerRadius - 4, 4)}px`,
         backgroundColor: cardBackground ?? '#ffffff',
@@ -124,7 +124,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
         e.stopPropagation();
         setSelectedElement({ type: 'step', phaseId, stepId: step.id });
       }}
-      data-selection-ring={isSelected}
+      data-selected={isSelected}
     >
       {/* Connector handles */}
       <ConnectorHandle stepId={step.id} position="top" />

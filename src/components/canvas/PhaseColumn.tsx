@@ -197,12 +197,12 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
 
   return (
     <div
-      className={`flex flex-col transition-all flex-1 min-w-0 ${isSelected ? 'selection-ring z-10' : ''}`}
+      className={`flex flex-col transition-all flex-1 min-w-0 ${isSelected ? 'z-10' : ''}`}
       style={{
         minWidth: `${currentWidth}px`,
         '--phase-color': phase.backgroundColor
       } as React.CSSProperties}
-      data-selection-ring={isSelected}
+      data-selected={isSelected}
     >
       {/* Phase header — centered */}
       <div
