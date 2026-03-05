@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Step, RoleDefinition, MeetingData } from '../../../types';
+import { CheckSquare, Scale } from 'lucide-react';
 
 interface Props {
   step: Step & { type: 'meeting'; data: MeetingData };
@@ -11,8 +12,10 @@ export const MeetingContent: React.FC<Props> = ({ step }) => {
   return (
     <div className="space-y-2">
       {agendaItems && agendaItems.length > 0 && (
-        <div className="bg-white/50 rounded p-1.5 border border-slate-100 shadow-sm">
-          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Agenda</p>
+        <div className="bg-white/50 rounded-lg p-2 border border-slate-100 shadow-sm">
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <CheckSquare size={9} className="text-blue-400" /> Agenda
+          </p>
           <ul className="space-y-1">
             {agendaItems.map((item, i) => (
               <li key={i} className="flex items-start gap-1.5 card-text">
@@ -24,10 +27,11 @@ export const MeetingContent: React.FC<Props> = ({ step }) => {
         </div>
       )}
 
-
       {hasDecision && decision && (
-        <div className="bg-amber-50/50 rounded p-1.5 border border-amber-100/50 shadow-sm">
-          <p className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mb-1">Decision Gate</p>
+        <div className="bg-amber-50/50 rounded-lg p-2 border border-amber-100/50 shadow-sm">
+          <p className="text-[9px] font-bold text-amber-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <Scale size={9} className="text-amber-500" /> Decision Gate
+          </p>
           <ul className="space-y-1 mb-1.5">
             {(decision.criteria || []).map((item, i) => (
               <li key={i} className="flex items-start gap-1.5 card-text">
@@ -37,10 +41,10 @@ export const MeetingContent: React.FC<Props> = ({ step }) => {
             ))}
           </ul>
           <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${decision.outcome === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-            decision.outcome === 'rejected' ? 'bg-red-100 text-red-700' :
-              'bg-amber-100 text-amber-700'
+              decision.outcome === 'rejected' ? 'bg-red-100 text-red-700' :
+                'bg-amber-100 text-amber-700'
             }`}>
-            {decision.outcome === 'approved' ? 'Approved' : decision.outcome === 'rejected' ? 'Rejected' : 'Pending'}
+            {decision.outcome === 'approved' ? '✓ Approved' : decision.outcome === 'rejected' ? '✕ Rejected' : '⏳ Pending'}
           </span>
         </div>
       )}

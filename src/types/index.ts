@@ -126,6 +126,7 @@ export interface BaseStep {
   description: string;
   iconName: string;
   roleIds: string[];
+  customLabel?: string;
   gridLayout?: {
     x: number;
     y: number;
@@ -193,6 +194,21 @@ export interface LayoutConfig {
   phaseSubtitleFontFamily?: string;
   cardTitleFontFamily?: string;
   cardContentFontFamily?: string;
+  cardTitleFontSize?: number;
+  cardContentFontSize?: number;
+  cardSubtextFontSize?: number;
+  stepLabelColor?: string;
+  stepLabelTextColor?: string;
+  stepLabelFontFamily?: string;
+  stepLabelFontSize?: number;
+  stepLabelMatchPhase?: boolean;
+
+  // New UI Customizations
+  cardBorderStyle: 'solid' | 'dashed' | 'dotted' | 'none';
+  cardBorderWidth: number;
+  cardShadow: 'none' | 'soft' | 'medium' | 'hard' | 'neon';
+  showStepIcons: boolean;
+  phaseBackgroundPattern: 'none' | 'dots' | 'grid' | 'diagonal';
 }
 
 export interface InfographicData {

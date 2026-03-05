@@ -11,7 +11,7 @@ export const Sidebar: React.FC = () => {
         <div className="h-full flex flex-col p-4">
             {selectedElement?.type === 'phase' && <PhaseEditor />}
             {selectedElement?.type === 'step' && <StepEditor />}
-            {!selectedElement && <InfographicSettings />}
+            {(!selectedElement || selectedElement.type === 'titleBar') && <InfographicSettings />}
         </div>
     );
 };

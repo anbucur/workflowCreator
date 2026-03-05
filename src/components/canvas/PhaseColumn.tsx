@@ -49,16 +49,22 @@ interface CardWrapperProps {
   roles: RoleDefinition[];
   cornerRadius: number;
   cardBackground?: string;
+  phaseColor?: string;
 }
 
 /**
  * Wraps a StepCard and uses ResizeObserver to keep the grid slot h tightly
  * matched to actual rendered card height — eliminating empty space at the bottom.
  */
-const CardWrapper: React.FC<CardWrapperProps> = ({ step, phaseId, roles, cornerRadius, cardBackground }) => {
+const CardWrapper: React.FC<CardWrapperProps> = ({ step, phaseId, roles, cornerRadius, cardBackground, phaseColor }) => {
   const ref = React.useRef<HTMLDivElement>(null);
+  const stepRef = React.useRef(step);
   // Track last-sent h via ref to prevent rapid-fire store updates
   const sentH = React.useRef<number>(step.gridLayout?.h ?? 10);
+
+  React.useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
 
   React.useEffect(() => {
     sentH.current = step.gridLayout?.h ?? 10;
@@ -74,11 +80,12 @@ const CardWrapper: React.FC<CardWrapperProps> = ({ step, phaseId, roles, cornerR
       const newH = pxToH(measured);
       if (newH !== sentH.current) {
         sentH.current = newH; // optimistic update — prevents duplicate writes
-        useInfographicStore.getState().updateStep(phaseId, step.id, {
+        const currentStep = stepRef.current;
+        useInfographicStore.getState().updateStep(phaseId, currentStep.id, {
           gridLayout: {
-            x: step.gridLayout?.x ?? 0,
-            y: step.gridLayout?.y ?? 0,
-            w: step.gridLayout?.w ?? 12,
+            x: currentStep.gridLayout?.x ?? 0,
+            y: currentStep.gridLayout?.y ?? 0,
+            w: currentStep.gridLayout?.w ?? 12,
             h: newH,
           },
         });
@@ -91,7 +98,7 @@ const CardWrapper: React.FC<CardWrapperProps> = ({ step, phaseId, roles, cornerR
 
   return (
     <div ref={ref} className="w-full">
-      <StepCard step={step} phaseId={phaseId} roles={roles} cornerRadius={cornerRadius} cardBackground={cardBackground} />
+      <StepCard step={step} phaseId={phaseId} roles={roles} cornerRadius={cornerRadius} cardBackground={cardBackground} phaseColor={phaseColor} />
     </div>
   );
 };
@@ -145,6 +152,32 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
     const rightEdge = nextPhaseColor ? rgbBlend(curC, nextC, 0.5) : curC;
     return `linear-gradient(to right, ${leftEdge} 0%, ${curC} ${leftIn}, ${curC} ${rightOut}, ${rightEdge} 100%)`;
   };
+
+  // Phase background pattern CSS
+  const getPatternStyle = (pattern: string): React.CSSProperties => {
+    const c = 'rgba(0,0,0,0.07)';
+    switch (pattern) {
+      case 'dots':
+        return {
+          backgroundImage: `radial-gradient(${c} 1.5px, transparent 1.5px)`,
+          backgroundSize: '14px 14px',
+        };
+      case 'grid':
+        return {
+          backgroundImage: `linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`,
+          backgroundSize: '18px 18px',
+        };
+      case 'diagonal':
+        return {
+          backgroundImage: `repeating-linear-gradient(45deg, ${c} 0, ${c} 1px, transparent 0, transparent 50%)`,
+          backgroundSize: '10px 10px',
+        };
+      default:
+        return {};
+    }
+  };
+
+  const patternStyle = getPatternStyle(layout.phaseBackgroundPattern || 'none');
 
   const isSelected = selectedElement?.type === 'phase' && selectedElement.phaseId === phase.id;
   const [isDragging, setIsDragging] = React.useState(false);
@@ -204,9 +237,13 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
 
       {/* Steps grid — always react-grid-layout so all phases support side-by-side dragging */}
       <div
-        className="p-3 pb-6 flex-1 flex flex-col"
+        className="p-3 pb-6 flex-1 flex flex-col relative"
         style={{ background: phaseGradient(phaseTintOpacity / 100) }}
       >
+        {/* Pattern overlay */}
+        {layout.phaseBackgroundPattern && layout.phaseBackgroundPattern !== 'none' && (
+          <div className="absolute inset-0 pointer-events-none" style={patternStyle} />
+        )}
         <GridLayout
           className="layout"
           layout={phase.steps.map((step) => {
@@ -275,6 +312,7 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
                   roles={roles}
                   cornerRadius={cornerRadius}
                   cardBackground={cardBackground}
+                  phaseColor={phase.backgroundColor}
                 />
               </div>
             );

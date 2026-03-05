@@ -83,21 +83,16 @@ export const AppShell: React.FC = () => {
 
             {/* Global Drag to Delete Zone — appears only in bottom third */}
             <div
-                className={`fixed bottom-0 left-0 right-0 pointer-events-none z-50 transition-all duration-200 px-6 pb-5 ${isDraggingCard ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                className={`fixed bottom-0 left-0 right-0 pointer-events-none z-50 transition-all duration-200 px-6 pb-6 ${isDraggingCard ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
             >
                 <div
-                    className={`w-full flex items-center justify-center gap-3 py-4 rounded-xl border-2 border-dashed transition-all duration-200 ${inDeleteZone
-                        ? 'bg-red-100 border-red-500 shadow-lg shadow-red-200'
-                        : 'bg-red-50 border-red-300'
+                    className={`max-w-lg mx-auto w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border-2 border-dashed transition-all duration-200 shadow-sm ${inDeleteZone
+                            ? 'bg-red-50 border-red-500 text-red-600'
+                            : 'bg-white border-slate-300 text-slate-400 hover:border-red-300'
                         }`}
                 >
-                    <Trash2
-                        size={18}
-                        className={`transition-colors duration-200 ${inDeleteZone ? 'text-red-600' : 'text-red-400'}`}
-                    />
-                    <span
-                        className={`text-sm font-bold uppercase tracking-widest transition-colors duration-200 ${inDeleteZone ? 'text-red-600' : 'text-red-400'}`}
-                    >
+                    <Trash2 size={18} />
+                    <span className="text-sm font-bold uppercase tracking-widest">
                         Drag here to delete
                     </span>
                 </div>

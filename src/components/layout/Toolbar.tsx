@@ -1,17 +1,20 @@
-import React from 'react';
-import { Route, ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Route, ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database } from 'lucide-react';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useExportStore } from '../../store/useExportStore';
 import { useStore } from 'zustand';
 import { exportInfographic } from '../../utils/export';
+import { ProjectExplorerModal } from './ProjectExplorerModal';
 
 export const Toolbar: React.FC = () => {
     const { undo, redo, pastStates, futureStates } = useStore(useInfographicStore.temporal);
     const [exportOpen, setExportOpen] = React.useState(false);
     const [exporting, setExporting] = React.useState(false);
+    const [explorerOpen, setExplorerOpen] = useState(false);
     const setPreviewOpen = useExportStore((s) => s.setPreviewOpen);
     const dropdownRef = React.useRef<HTMLDivElement>(null);
     const infographicRef = useExportStore((s) => s.infographicRef);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Close dropdown on outside click
     React.useEffect(() => {
@@ -35,6 +38,36 @@ export const Toolbar: React.FC = () => {
         }
     };
 
+    const handleExportJson = () => {
+        const data = useInfographicStore.getState().getSnapshot();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `project-${data.id || 'export'}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target?.result as string);
+                useInfographicStore.getState().loadInfographic(data);
+            } catch (error) {
+                console.error('Failed to parse JSON', error);
+                alert('Invalid project file.');
+            }
+        };
+        reader.readAsText(file);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''; // Reset input
+        }
+    };
+
     return (
         <header className="h-12 border-b border-slate-200 bg-white flex items-center justify-between px-4 shrink-0 z-10">
             <div className="flex items-center gap-2">
@@ -45,6 +78,41 @@ export const Toolbar: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-1">
+                {/* Project File Actions */}
+                <button
+                    onClick={() => setExplorerOpen(true)}
+                    className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-slate-50 border border-slate-200"
+                    title="Open Project Explorer"
+                >
+                    <Database size={16} className="text-blue-500" /> Projects
+                </button>
+
+                <div className="w-px h-4 bg-slate-200 mx-2" />
+
+                <input
+                    type="file"
+                    accept=".json"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleImportJson}
+                />
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors"
+                    title="Import Project (JSON)"
+                >
+                    <FolderOpen size={18} />
+                </button>
+                <button
+                    onClick={handleExportJson}
+                    className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors"
+                    title="Export Project (JSON)"
+                >
+                    <Save size={18} />
+                </button>
+
+                <div className="w-px h-4 bg-slate-200 mx-1" />
+
                 <button
                     onClick={() => undo()}
                     disabled={pastStates.length === 0}
@@ -129,6 +197,8 @@ export const Toolbar: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {explorerOpen && <ProjectExplorerModal onClose={() => setExplorerOpen(false)} />}
         </header>
     );
 };

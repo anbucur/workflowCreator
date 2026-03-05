@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useUiStore } from '../../store/useUiStore';
 import { Trash2 } from 'lucide-react';
@@ -6,6 +6,8 @@ import { IconSelector } from '../shared/IconSelector';
 import { StepDataEditor } from './step-editors/StepDataEditor';
 import { STEP_TYPE_LABELS } from '../../types';
 import { getDefaultStepData } from '../../types/defaults';
+import { Dropdown, type DropdownOption } from '../shared/Dropdown';
+import { AutoResizeTextarea } from '../shared/AutoResizeTextarea';
 
 export const StepEditor: React.FC = () => {
     const selectedElement = useUiStore((s) => s.selectedElement);
@@ -15,6 +17,11 @@ export const StepEditor: React.FC = () => {
     const removeStep = useInfographicStore((s) => s.removeStep);
     const toggleStepRole = useInfographicStore((s) => s.toggleStepRole);
     const setSelectedElement = useUiStore((s) => s.setSelectedElement);
+
+    const stepTypeOptions: DropdownOption[] = useMemo(() =>
+        Object.entries(STEP_TYPE_LABELS).map(([value, label]) => ({ value, label })),
+        []
+    );
 
     if (selectedElement?.type !== 'step') return null;
 
@@ -52,30 +59,40 @@ export const StepEditor: React.FC = () => {
 
                 <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-slate-700">Step Type</label>
-                    <select
+                    <Dropdown
+                        options={stepTypeOptions}
                         value={step.type}
-                        onChange={(e) => {
-                            const newType = e.target.value as any;
+                        onChange={(val) => {
+                            const newType = val as any;
                             updateStep(phase.id, step.id, {
                                 type: newType,
                                 data: getDefaultStepData(newType) as any
                             });
                         }}
-                        className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500 bg-white"
-                        title="Step Type"
-                    >
-                        {Object.entries(STEP_TYPE_LABELS).map(([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                        ))}
-                    </select>
+                        placeholder="Select Type…"
+                    />
                 </div>
+
+                {step.type === 'standard' && (
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-medium text-slate-700">Custom Label <span className="text-slate-400 font-normal">(optional)</span></label>
+                        <input
+                            type="text"
+                            placeholder="e.g. Meeting, Review, Sprint…"
+                            value={step.customLabel || ''}
+                            onChange={(e) => updateStep(phase.id, step.id, { customLabel: e.target.value || undefined })}
+                            className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
+                        />
+                        <p className="text-[10px] text-slate-400">Shown as a badge in the card header</p>
+                    </div>
+                )}
 
                 <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-slate-700">Description</label>
-                    <textarea
+                    <AutoResizeTextarea
                         value={step.description}
                         onChange={(e) => updateStep(phase.id, step.id, { description: e.target.value })}
-                        className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500 min-h-[80px] resize-y"
+                        minRows={2}
                     />
                 </div>
 
@@ -87,7 +104,7 @@ export const StepEditor: React.FC = () => {
 
                 <div className="flex flex-col gap-2 mt-2">
                     <label className="text-xs font-medium text-slate-700">Assigned Roles</label>
-                    <div className="flex flex-col gap-1.5 bg-slate-50 p-3 rounded border border-slate-200">
+                    <div className="flex flex-col gap-2 pl-1">
                         {roles.map((role) => (
                             <label key={role.id} className="flex items-center gap-2 cursor-pointer">
                                 <input

@@ -25,9 +25,10 @@ interface StepCardProps {
   roles: RoleDefinition[];
   cornerRadius: number;
   cardBackground?: string;
+  phaseColor?: string;
 }
 
-export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, cornerRadius, cardBackground }) => {
+export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, cornerRadius, cardBackground, phaseColor }) => {
   const selectedElement = useUiStore((s) => s.selectedElement);
   const setSelectedElement = useUiStore((s) => s.setSelectedElement);
   const layout = useInfographicStore((s) => s.layout);
@@ -75,13 +76,49 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
     return true;
   }, [step]);
 
+  const getShadowClass = (shadow: string) => {
+    switch (shadow) {
+      case 'none': return 'shadow-none';
+      case 'soft': return 'shadow-sm shadow-slate-900/5';
+      case 'medium': return 'shadow-md shadow-slate-900/10';
+      case 'hard': return 'shadow-xl shadow-slate-900/20';
+      case 'neon': return ''; // Handle via inline styles
+      default: return 'shadow-sm shadow-slate-900/5';
+    }
+  };
+
+  const shadowClass = getShadowClass(layout.cardShadow || 'soft');
+  const showIcon = layout.showStepIcons ?? true;
+
+  // Darken a hex colour by a fraction (0–1)
+  const darkenColor = (hex: string, amount = 0.25): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `#${Math.round(r * (1 - amount)).toString(16).padStart(2, '0')}${Math.round(g * (1 - amount)).toString(16).padStart(2, '0')}${Math.round(b * (1 - amount)).toString(16).padStart(2, '0')}`;
+  };
+
+  // Compute the label badge background: match-phase uses a darkened phase colour
+  const labelBg = layout.stepLabelMatchPhase
+    ? darkenColor(phaseColor ?? layout.stepLabelColor ?? '#3c83f6', 0.25)
+    : (layout.stepLabelColor ?? '#3c83f6');
+  // Use the global setting for label text colour (default white)
+  const labelTextColor = layout.stepLabelTextColor ?? '#ffffff';
+  const labelFontFamily = layout.stepLabelFontFamily || `'Inter', sans-serif`;
+  const labelFontSize = layout.stepLabelFontSize ?? 9;
+
   return (
     <div
-      className={`glass h-fit flex flex-col p-3 cursor-pointer transition-all hover:shadow-md border border-white/50 shadow-sm relative group ${isSelected ? 'selection-ring z-10' : ''}`}
+      className={`glass h-fit flex flex-col p-3 cursor-pointer transition-all hover:-translate-y-0.5 relative group ${isSelected ? 'selection-ring z-10' : ''} ${layout.cardShadow !== 'neon' ? shadowClass : ''}`}
       style={{
         borderRadius: `${Math.max(cornerRadius - 4, 4)}px`,
         backgroundColor: cardBackground ?? '#ffffff',
-      }}
+        borderStyle: layout.cardBorderStyle === 'none' ? 'hidden' : (layout.cardBorderStyle || 'solid'),
+        borderWidth: layout.cardBorderStyle === 'none' ? '0px' : `${layout.cardBorderWidth || 1}px`,
+        borderColor: 'rgba(0,0,0,0.08)',
+        boxShadow: layout.cardShadow === 'neon' ? `0 0 15px ${cardBackground ?? 'rgba(0,0,0,0.2)'}` : undefined,
+        '--card-subtext-size': `${layout.cardSubtextFontSize ?? 9}px`,
+      } as React.CSSProperties}
       onClick={(e) => {
         e.stopPropagation();
         setSelectedElement({ type: 'step', phaseId, stepId: step.id });
@@ -90,29 +127,44 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
     >
       {/* Header row: type badge and icon */}
       <div className="flex justify-between items-start mb-2">
-        {step.type !== 'standard' ? (
-          <span className="bg-primary/10 text-primary text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-widest">
-            {STEP_TYPE_LABELS[step.type]}
+        {(step.type !== 'standard' || step.customLabel) ? (
+          <span
+            className="font-bold px-1.5 py-0.5 rounded uppercase tracking-widest"
+            style={{
+              backgroundColor: labelBg,
+              color: labelTextColor,
+              opacity: 0.9,
+              fontFamily: labelFontFamily,
+              fontSize: `${labelFontSize}px`,
+            }}
+          >
+            {step.type !== 'standard' ? STEP_TYPE_LABELS[step.type] : step.customLabel}
           </span>
         ) : (
-          <span className="opacity-0 w-0 h-0" /> // spacer if no badge to keep layout aligned
+          <span className="opacity-0 w-0 h-0" />
         )}
 
         <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-          {iconToRender && React.createElement(iconToRender, { size: 18, className: "text-slate-700" })}
+          {showIcon && iconToRender && React.createElement(iconToRender, { size: 20, className: "text-slate-700" })}
         </div>
       </div>
 
       {/* Title block */}
       <h4
-        className="font-bold text-xs leading-tight text-slate-800 mb-1"
-        style={{ fontFamily: layout.cardTitleFontFamily || `'Inter', sans-serif` }}
+        className="font-bold leading-tight text-slate-800 mb-1"
+        style={{
+          fontFamily: layout.cardTitleFontFamily || `'Inter', sans-serif`,
+          fontSize: `${layout.cardTitleFontSize ?? 12}px`,
+        }}
       >
         {step.title}
       </h4>
       <p
-        className="text-[11px] text-slate-600 leading-snug"
-        style={{ fontFamily: layout.cardContentFontFamily || `'Inter', sans-serif` }}
+        className="text-slate-600 leading-snug"
+        style={{
+          fontFamily: layout.cardContentFontFamily || `'Inter', sans-serif`,
+          fontSize: `${layout.cardContentFontSize ?? 11}px`,
+        }}
       >
         {step.description}
       </p>

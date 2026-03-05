@@ -3,6 +3,8 @@ import type { Step } from '../../../types';
 import { useInfographicStore } from '../../../store/useInfographicStore';
 import { createId } from '../../../types/defaults';
 import { Trash2, Plus, GripVertical } from 'lucide-react';
+import { Dropdown } from '../../shared/Dropdown';
+import { AutoResizeTextarea } from '../../shared/AutoResizeTextarea';
 
 interface Props {
     step: Step;
@@ -52,15 +54,14 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                                     <div className="cursor-grab text-slate-400 hover:text-slate-600 active:cursor-grabbing p-1">
                                         <GripVertical size={14} />
                                     </div>
-                                    <input
-                                        type="text"
+                                    <AutoResizeTextarea
                                         value={item}
                                         onChange={(e) => {
                                             const newItems = [...data.agendaItems];
                                             newItems[i] = e.target.value;
                                             updateData({ agendaItems: newItems });
                                         }}
-                                        className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
+                                        className="flex-1"
                                     />
                                     <button
                                         onClick={() => {
@@ -84,25 +85,21 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
 
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-medium text-slate-700">Facilitator</label>
-                            <input
-                                type="text"
+                            <AutoResizeTextarea
                                 value={data.facilitator || ''}
                                 onChange={(e) => updateData({ facilitator: e.target.value })}
-                                className="px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
                             />
                         </div>
 
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-medium text-slate-700">Duration</label>
-                            <input
-                                type="text"
+                            <AutoResizeTextarea
                                 value={data.duration || ''}
                                 onChange={(e) => updateData({ duration: e.target.value })}
-                                className="px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
                             />
                         </div>
 
-                        <div className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-200 rounded">
+                        <div className="flex flex-col gap-2 pb-2">
                             <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
                                 <input
                                     type="checkbox"
@@ -123,15 +120,14 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                                     <label className="text-xs font-medium text-slate-700">Decision Criteria</label>
                                     {(data.decision.criteria || []).map((item: string, i: number) => (
                                         <div key={i} className="flex gap-2">
-                                            <input
-                                                type="text"
+                                            <AutoResizeTextarea
                                                 value={item}
                                                 onChange={(e) => {
                                                     const newCriteria = [...data.decision.criteria];
                                                     newCriteria[i] = e.target.value;
                                                     updateData({ decision: { ...data.decision, criteria: newCriteria } });
                                                 }}
-                                                className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
+                                                className="flex-1"
                                             />
                                             <button
                                                 onClick={() => {
@@ -153,15 +149,16 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                                     </button>
 
                                     <label className="text-xs font-medium text-slate-700 mt-2">Outcome</label>
-                                    <select
+                                    <Dropdown
+                                        options={[
+                                            { value: 'pending', label: 'Pending' },
+                                            { value: 'approved', label: 'Approved' },
+                                            { value: 'rejected', label: 'Rejected' },
+                                        ]}
                                         value={data.decision.outcome || 'pending'}
-                                        onChange={(e) => updateData({ decision: { ...data.decision, outcome: e.target.value } })}
-                                        className="px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
-                                    >
-                                        <option value="pending">Pending</option>
-                                        <option value="approved">Approved</option>
-                                        <option value="rejected">Rejected</option>
-                                    </select>
+                                        onChange={(val) => updateData({ decision: { ...data.decision, outcome: val } })}
+                                        placeholder="Select Outcome…"
+                                    />
                                 </div>
                             )}
                         </div>
@@ -177,15 +174,14 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                             <label className="text-xs font-medium text-slate-700">Criteria</label>
                             {(data.criteria || []).map((item: string, i: number) => (
                                 <div key={i} className="flex gap-2">
-                                    <input
-                                        type="text"
+                                    <AutoResizeTextarea
                                         value={item}
                                         onChange={(e) => {
                                             const newItems = [...data.criteria];
                                             newItems[i] = e.target.value;
                                             updateData({ criteria: newItems });
                                         }}
-                                        className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
+                                        className="flex-1"
                                     />
                                     <button
                                         onClick={() => {
@@ -209,15 +205,16 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
 
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-medium text-slate-700">Outcome</label>
-                            <select
+                            <Dropdown
+                                options={[
+                                    { value: 'pending', label: 'Pending' },
+                                    { value: 'approved', label: 'Approved' },
+                                    { value: 'rejected', label: 'Rejected' },
+                                ]}
                                 value={data.outcome || 'pending'}
-                                onChange={(e) => updateData({ outcome: e.target.value })}
-                                className="px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
-                            >
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                            </select>
+                                onChange={(val) => updateData({ outcome: val })}
+                                placeholder="Select Outcome…"
+                            />
                         </div>
                     </div>
                 );
@@ -229,9 +226,8 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                     <div className="flex flex-col gap-4">
                         <label className="text-xs font-medium text-slate-700">Tracks</label>
                         {(data.tracks || []).map((track: any, i: number) => (
-                            <div key={track.id} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-200 rounded">
-                                <input
-                                    type="text"
+                            <div key={track.id} className="flex flex-col gap-2 pb-2">
+                                <AutoResizeTextarea
                                     placeholder="Label"
                                     value={track.label}
                                     onChange={(e) => {
@@ -239,9 +235,8 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                                         newTracks[i] = { ...track, label: e.target.value };
                                         updateData({ tracks: newTracks });
                                     }}
-                                    className="px-3 py-1.5 text-sm border border-slate-300 rounded"
                                 />
-                                <textarea
+                                <AutoResizeTextarea
                                     placeholder="Description"
                                     value={track.description}
                                     onChange={(e) => {
@@ -249,7 +244,7 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                                         newTracks[i] = { ...track, description: e.target.value };
                                         updateData({ tracks: newTracks });
                                     }}
-                                    className="px-3 py-1.5 text-sm border border-slate-300 rounded min-h-[60px]"
+                                    minRows={2}
                                 />
                                 <button
                                     onClick={() => {
@@ -289,15 +284,14 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                                         updateData({ items: newItems });
                                     }}
                                 />
-                                <input
-                                    type="text"
+                                <AutoResizeTextarea
                                     value={item.text}
                                     onChange={(e) => {
                                         const newItems = [...data.items];
                                         newItems[i] = { ...item, text: e.target.value };
                                         updateData({ items: newItems });
                                     }}
-                                    className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
+                                    className="flex-1"
                                 />
                                 <button
                                     onClick={() => {
@@ -347,15 +341,14 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                             <label className="text-xs font-medium text-slate-700">Artifacts</label>
                             {(data.artifacts || []).map((item: string, i: number) => (
                                 <div key={i} className="flex gap-2">
-                                    <input
-                                        type="text"
+                                    <AutoResizeTextarea
                                         value={item}
                                         onChange={(e) => {
                                             const newItems = [...data.artifacts];
                                             newItems[i] = e.target.value;
                                             updateData({ artifacts: newItems });
                                         }}
-                                        className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded"
+                                        className="flex-1"
                                     />
                                     <button onClick={() => { const n = [...data.artifacts]; n.splice(i, 1); updateData({ artifacts: n }); }} className="p-1.5 text-red-500 rounded"><Trash2 size={14} /></button>
                                 </div>
@@ -377,16 +370,17 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-medium text-slate-700">Status</label>
-                            <select
+                            <Dropdown
+                                options={[
+                                    { value: 'none', label: 'None' },
+                                    { value: 'not-started', label: 'Not Started' },
+                                    { value: 'in-progress', label: 'In Progress' },
+                                    { value: 'completed', label: 'Completed' },
+                                ]}
                                 value={data.status || 'not-started'}
-                                onChange={(e) => updateData({ status: e.target.value })}
-                                className="px-3 py-1.5 text-sm border border-slate-300 rounded"
-                            >
-                                <option value="none">None</option>
-                                <option value="not-started">Not Started</option>
-                                <option value="in-progress">In Progress</option>
-                                <option value="completed">Completed</option>
-                            </select>
+                                onChange={(val) => updateData({ status: val })}
+                                placeholder="Select Status…"
+                            />
                         </div>
 
                         <div className="flex flex-col gap-1.5">
@@ -403,15 +397,14 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                             <label className="text-xs font-medium text-slate-700">Deliverables</label>
                             {(data.deliverables || []).map((item: string, i: number) => (
                                 <div key={i} className="flex gap-2">
-                                    <input
-                                        type="text"
+                                    <AutoResizeTextarea
                                         value={item}
                                         onChange={(e) => {
                                             const newItems = [...data.deliverables];
                                             newItems[i] = e.target.value;
                                             updateData({ deliverables: newItems });
                                         }}
-                                        className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded"
+                                        className="flex-1"
                                     />
                                     <button onClick={() => { const n = [...data.deliverables]; n.splice(i, 1); updateData({ deliverables: n }); }} className="p-1.5 text-red-500 rounded"><Trash2 size={14} /></button>
                                 </div>
@@ -434,9 +427,8 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                     <div className="flex flex-col gap-4">
                         <label className="text-xs font-medium text-slate-700">Documents</label>
                         {(data.documents || []).map((doc: any, i: number) => (
-                            <div key={doc.id} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-200 rounded">
-                                <input
-                                    type="text"
+                            <div key={doc.id} className="flex flex-col gap-2 pb-2">
+                                <AutoResizeTextarea
                                     placeholder="Document Name"
                                     value={doc.name}
                                     onChange={(e) => {
@@ -444,22 +436,22 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                                         newDocs[i] = { ...doc, name: e.target.value };
                                         updateData({ documents: newDocs });
                                     }}
-                                    className="px-3 py-1.5 text-sm border border-slate-300 rounded"
                                 />
-                                <select
+                                <Dropdown
+                                    options={[
+                                        { value: 'spec', label: 'Specification' },
+                                        { value: 'diagram', label: 'Diagram' },
+                                        { value: 'guide', label: 'Guide' },
+                                        { value: 'other', label: 'Other' },
+                                    ]}
                                     value={doc.docType}
-                                    onChange={(e) => {
+                                    onChange={(val) => {
                                         const newDocs = [...data.documents];
-                                        newDocs[i] = { ...doc, docType: e.target.value };
+                                        newDocs[i] = { ...doc, docType: val };
                                         updateData({ documents: newDocs });
                                     }}
-                                    className="px-3 py-1.5 text-sm border border-slate-300 rounded"
-                                >
-                                    <option value="spec">Specification</option>
-                                    <option value="diagram">Diagram</option>
-                                    <option value="guide">Guide</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                    placeholder="Select Type…"
+                                />
                                 <button
                                     onClick={() => {
                                         const newDocs = [...data.documents];
@@ -501,23 +493,19 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-medium text-slate-700">Loop Participants</label>
                             {(data.participants || []).map((p: any, i: number) => (
-                                <div key={i} className="flex gap-2 p-2 bg-slate-50 border border-slate-200 rounded">
-                                    <select
+                                <div key={i} className="flex gap-2 items-center">
+                                    <Dropdown
+                                        options={roles.map(r => ({ value: r.id, label: r.name, color: r.color }))}
                                         value={p.roleId}
-                                        onChange={(e) => {
+                                        onChange={(roleId: string) => {
                                             const newP = [...data.participants];
-                                            newP[i] = { ...p, roleId: e.target.value };
+                                            newP[i] = { ...p, roleId };
                                             updateData({ participants: newP });
                                         }}
-                                        className="w-1/3 px-3 py-1.5 text-sm border border-slate-300 rounded"
-                                    >
-                                        <option value="">Select Role...</option>
-                                        {roles.map(r => (
-                                            <option key={r.id} value={r.id}>{r.name}</option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        type="text"
+                                        className="w-[120px] flex-shrink-0"
+                                        placeholder="Select Role..."
+                                    />
+                                    <AutoResizeTextarea
                                         placeholder="Action"
                                         value={p.action}
                                         onChange={(e) => {
@@ -525,9 +513,9 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                                             newP[i] = { ...p, action: e.target.value };
                                             updateData({ participants: newP });
                                         }}
-                                        className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded"
+                                        className="flex-1 min-w-0"
                                     />
-                                    <button onClick={() => { const n = [...data.participants]; n.splice(i, 1); updateData({ participants: n }); }} className="p-1.5 text-red-500 rounded"><Trash2 size={14} /></button>
+                                    <button onClick={() => { const n = [...data.participants]; n.splice(i, 1); updateData({ participants: n }); }} className="p-1.5 text-red-500 rounded flex-shrink-0"><Trash2 size={14} /></button>
                                 </div>
                             ))}
                             <button
@@ -540,11 +528,9 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
 
                         <div className="flex flex-col gap-1.5 border-t border-slate-200 pt-4 mt-2">
                             <label className="text-xs font-medium text-slate-700">Final Action Title</label>
-                            <input
-                                type="text"
+                            <AutoResizeTextarea
                                 value={data.finalActionTitle || ''}
                                 onChange={(e) => updateData({ finalActionTitle: e.target.value })}
-                                className="px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
                             />
                         </div>
 
@@ -552,15 +538,14 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                             <label className="text-xs font-medium text-slate-700">Final Items</label>
                             {(data.finalItems || []).map((item: string, i: number) => (
                                 <div key={i} className="flex gap-2">
-                                    <input
-                                        type="text"
+                                    <AutoResizeTextarea
                                         value={item}
                                         onChange={(e) => {
                                             const newItems = [...data.finalItems];
                                             newItems[i] = e.target.value;
                                             updateData({ finalItems: newItems });
                                         }}
-                                        className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded"
+                                        className="flex-1"
                                     />
                                     <button onClick={() => { const n = [...data.finalItems]; n.splice(i, 1); updateData({ finalItems: n }); }} className="p-1.5 text-red-500 rounded"><Trash2 size={14} /></button>
                                 </div>
