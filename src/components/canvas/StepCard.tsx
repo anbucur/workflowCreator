@@ -5,6 +5,7 @@ import { useInfographicStore } from '../../store/useInfographicStore';
 import { StepContentRouter } from './step-content/StepContentRouter';
 import { ConnectorHandle } from './ConnectorHandle';
 import { STEP_TYPE_LABELS } from '../../types';
+import { getContrastTextColor, getContrastMutedColor } from '../../utils/contrast';
 
 // Dynamically render lucide icons by name
 import * as LucideIcons from 'lucide-react';
@@ -103,10 +104,14 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
   const labelBg = layout.stepLabelMatchPhase
     ? darkenColor(phaseColor ?? layout.stepLabelColor ?? '#3c83f6', 0.25)
     : (layout.stepLabelColor ?? '#3c83f6');
-  // Use the global setting for label text colour (default white)
-  const labelTextColor = layout.stepLabelTextColor ?? '#ffffff';
   const labelFontFamily = layout.stepLabelFontFamily || `'Inter', sans-serif`;
   const labelFontSize = layout.stepLabelFontSize ?? 9;
+
+  // Auto-contrast: compute text colours based on card background
+  const effectiveBg = cardBackground ?? '#ffffff';
+  const autoTextColor = getContrastTextColor(effectiveBg);
+  const autoMutedColor = getContrastMutedColor(effectiveBg);
+  const autoLabelTextColor = getContrastTextColor(labelBg);
 
   return (
     <div
@@ -138,7 +143,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
             className="font-bold px-1.5 py-0.5 rounded uppercase tracking-widest"
             style={{
               backgroundColor: labelBg,
-              color: labelTextColor,
+              color: autoLabelTextColor,
               opacity: 0.9,
               fontFamily: labelFontFamily,
               fontSize: `${labelFontSize}px`,
@@ -151,25 +156,27 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
         )}
 
         <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-          {showIcon && iconToRender && React.createElement(iconToRender, { size: 20, className: "text-slate-700" })}
+          {showIcon && iconToRender && React.createElement(iconToRender, { size: 20, style: { color: autoMutedColor } })}
         </div>
       </div>
 
       {/* Title block */}
       <h4
-        className="font-bold leading-tight text-slate-800 mb-1"
+        className="font-bold leading-tight mb-1"
         style={{
           fontFamily: layout.cardTitleFontFamily || `'Inter', sans-serif`,
           fontSize: `${layout.cardTitleFontSize ?? 12}px`,
+          color: autoTextColor,
         }}
       >
         {step.title}
       </h4>
       <p
-        className="text-slate-600 leading-snug"
+        className="leading-snug"
         style={{
           fontFamily: layout.cardContentFontFamily || `'Inter', sans-serif`,
           fontSize: `${layout.cardContentFontSize ?? 11}px`,
+          color: autoMutedColor,
         }}
       >
         {step.description}
@@ -178,8 +185,8 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
       {/* Type-specific content — full width */}
       {hasContent && (
         <div
-          className="mt-3 pt-3 border-t border-slate-100 text-slate-600"
-          style={{ fontFamily: layout.cardContentFontFamily || `'Inter', sans-serif` }}
+          className="mt-3 pt-3 border-t border-slate-100"
+          style={{ fontFamily: layout.cardContentFontFamily || `'Inter', sans-serif`, color: autoMutedColor }}
         >
           <StepContentRouter step={step} roles={roles} />
         </div>

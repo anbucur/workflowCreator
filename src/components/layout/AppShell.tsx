@@ -3,12 +3,17 @@ import { Toolbar } from './Toolbar';
 import { Sidebar } from './Sidebar';
 import { Canvas } from './Canvas';
 import { ExportPreviewModal } from '../export/ExportPreviewModal';
+import { ProjectWizard } from '../wizard/ProjectWizard';
 import { useUiStore } from '../../store/useUiStore';
+import { useInfographicStore } from '../../store/useInfographicStore';
 import { Trash2 } from 'lucide-react';
 
 export const AppShell: React.FC = () => {
     const sidebarOpen = useUiStore((state) => state.sidebarOpen);
     const isDraggingCard = useUiStore((state) => state.isDraggingCard);
+    const wizardOpen = useUiStore((state) => state.wizardOpen);
+    const setWizardOpen = useUiStore((state) => state.setWizardOpen);
+    const loadInfographic = useInfographicStore((s) => s.loadInfographic);
     const [inDeleteZone, setInDeleteZone] = React.useState(false);
 
     // Sidebar resize state
@@ -99,6 +104,16 @@ export const AppShell: React.FC = () => {
             </div>
 
             <ExportPreviewModal />
+
+            {wizardOpen && (
+                <ProjectWizard
+                    onComplete={(data) => {
+                        loadInfographic(data);
+                        setWizardOpen(false);
+                    }}
+                    onClose={() => setWizardOpen(false)}
+                />
+            )}
         </div>
     );
 };

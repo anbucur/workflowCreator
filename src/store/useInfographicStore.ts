@@ -58,6 +58,7 @@ function extractData(state: InfographicStore): InfographicData {
 
 import { temporal } from 'zundo';
 import { PREDEFINED_THEMES } from '../utils/themes';
+import { getContrastTextColor } from '../utils/contrast';
 
 const defaultData = createDefaultInfographic();
 
@@ -244,16 +245,33 @@ export const useInfographicStore = create<InfographicStore>()(
 
       // Map through phases and assign colors in order
       const newPhases = s.phases.map((phase, index) => {
-        // Use modulo to cycle through colors if there are more phases than colors
         const colorIndex = index % theme.colors.length;
         return {
           ...phase,
           backgroundColor: theme.colors[colorIndex],
-          textColor: theme.textColor,
+          textColor: getContrastTextColor(theme.colors[colorIndex]),
         };
       });
 
-      return { phases: newPhases };
+      return {
+        phases: newPhases,
+        backgroundColor: theme.canvasBg,
+        titleBar: {
+          ...s.titleBar,
+          backgroundColor: theme.titleBarBg,
+          textColor: theme.titleBarText,
+          titleFontFamily: theme.fonts.headingFont,
+          subtitleFontFamily: theme.fonts.bodyFont,
+        },
+        layout: {
+          ...s.layout,
+          phaseTitleFontFamily: theme.fonts.headingFont,
+          phaseSubtitleFontFamily: theme.fonts.bodyFont,
+          cardTitleFontFamily: theme.fonts.headingFont,
+          cardContentFontFamily: theme.fonts.bodyFont,
+          stepLabelFontFamily: theme.fonts.bodyFont,
+        },
+      };
     }),
 
     loadInfographic: (data) => set({ ...data }),
