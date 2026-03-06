@@ -57,7 +57,7 @@ export const AppShell: React.FC = () => {
         <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-display">
             <Toolbar />
             <main className="flex flex-1 overflow-hidden min-h-0">
-                <div className="flex-1 relative overflow-auto p-4 md:p-8 bg-slate-50 w-full">
+                <div className="flex-1 relative overflow-auto p-4 md:p-8 bg-slate-50 w-full isolate">
                     <Canvas />
                 </div>
 

@@ -90,18 +90,18 @@ export const Toolbar: React.FC = () => {
                 {/* Icon mark: gradient square with 3 stacked bars */}
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
-                        <linearGradient id="cadence-grad" x1="0" y1="0" x2="1" y2="1">
+                        <linearGradient id="phasecraft-grad" x1="0" y1="0" x2="1" y2="1">
                             <stop offset="0%" stopColor="#7c3aed" />
                             <stop offset="100%" stopColor="#3b82f6" />
                         </linearGradient>
                     </defs>
-                    <rect width="24" height="24" rx="6" fill="url(#cadence-grad)" />
+                    <rect width="24" height="24" rx="6" fill="url(#phasecraft-grad)" />
                     <rect x="5" y="7" width="8" height="2" rx="1" fill="white" />
                     <rect x="5" y="11" width="11" height="2" rx="1" fill="white" />
                     <rect x="5" y="15" width="14" height="2" rx="1" fill="white" />
                 </svg>
                 <span className="font-bold text-slate-800 tracking-tight" style={{ fontSize: '15px', fontFamily: "'Inter', sans-serif", letterSpacing: '-0.01em' }}>
-                    Cadence
+                    Phasecraft
                 </span>
             </div>
 

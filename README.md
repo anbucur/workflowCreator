@@ -1,4 +1,4 @@
-# Cadence
+# Phasecraft
 
 A visual workflow infographic editor for creating professional, export-ready process diagrams. Build multi-phase workflows with 13 step types, customizable themes, role management, and advanced connectors — all from a drag-and-drop canvas.
 
