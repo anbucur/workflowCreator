@@ -15,7 +15,10 @@
       "Bash(npm install lucide-react@latest @types/node@latest)",
       "Bash(npm run build)",
       "Bash(npm ls --depth=0)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(git fetch origin)",
+      "Bash(git add src/components/canvas/ConnectorOverlay.tsx)",
+      "Bash(git commit --no-edit)"
     ]
   }
 }
