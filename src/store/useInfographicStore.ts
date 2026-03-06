@@ -59,6 +59,7 @@ function extractData(state: InfographicStore): InfographicData {
 import { temporal } from 'zundo';
 import { PREDEFINED_THEMES } from '../utils/themes';
 import { getContrastTextColor } from '../utils/contrast';
+import { sanitizeInfographicData } from '../utils/validation';
 
 const defaultData = createDefaultInfographic();
 
@@ -274,7 +275,10 @@ export const useInfographicStore = create<InfographicStore>()(
       };
     }),
 
-    loadInfographic: (data) => set({ ...data }),
+    loadInfographic: (data) => {
+      const sanitized = sanitizeInfographicData(data) as InfographicData;
+      set({ ...sanitized });
+    },
     resetToDefault: () => set({ ...createDefaultInfographic() }),
     getSnapshot: () => extractData(get()),
   })));
