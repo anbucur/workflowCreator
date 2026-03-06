@@ -3,6 +3,7 @@ import { useInfographicStore } from '../../store/useInfographicStore';
 import { useUiStore } from '../../store/useUiStore';
 import { ColorPicker } from '../shared/ColorPicker';
 import { Trash2 } from 'lucide-react';
+import { getContrastTextColor } from '../../utils/contrast';
 
 export const PhaseEditor: React.FC = () => {
     const selectedElement = useUiStore((s) => s.selectedElement);
@@ -60,7 +61,10 @@ export const PhaseEditor: React.FC = () => {
                 <ColorPicker
                     label="Background Color"
                     color={phase.backgroundColor}
-                    onChange={(color) => updatePhase(phase.id, { backgroundColor: color })}
+                    onChange={(color) => updatePhase(phase.id, {
+                        backgroundColor: color,
+                        textColor: getContrastTextColor(color),
+                    })}
                 />
 
                 <ColorPicker

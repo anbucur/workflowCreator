@@ -253,6 +253,12 @@ export const InfographicSettings: React.FC = () => {
                                         <div key={i} className="flex-1 h-full" style={{ backgroundColor: c }} />
                                     ))}
                                 </div>
+                                <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                    <span style={{ fontFamily: theme.fonts.headingFont }} className="font-semibold">Aa</span>
+                                    <span>{theme.fonts.headingFont.replace(/'/g, '').split(',')[0]}</span>
+                                    <span>+</span>
+                                    <span>{theme.fonts.bodyFont.replace(/'/g, '').split(',')[0]}</span>
+                                </div>
                             </button>
                         );
                     })}

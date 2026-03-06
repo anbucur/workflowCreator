@@ -24,7 +24,6 @@ function getCardRect(container: HTMLElement, stepId: string, handle: ConnectorHa
     return new DOMRect(cr.left - pr.left, cr.top - pr.top, cr.width, cr.height);
 }
 
-
 /**
  * Smart path builder that routes around source/target cards.
  * Uses card bounding rects to push waypoints into clear space.
