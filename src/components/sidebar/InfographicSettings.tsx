@@ -173,10 +173,10 @@ export const InfographicSettings: React.FC = () => {
                         <label className="flex flex-col items-center justify-center p-4 h-24 w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-100 hover:border-slate-400 transition-colors">
                             <ImageIcon size={20} className="text-slate-400 mb-2" />
                             <span className="text-xs font-medium text-slate-600">Upload Logo</span>
-                            <span className="text-[10px] text-slate-400">PNG, JPG, SVG</span>
+                            <span className="text-[10px] text-slate-400">PNG, JPG</span>
                             <input
                                 type="file"
-                                accept="image/png,image/jpeg,image/svg+xml"
+                                accept="image/png,image/jpeg"
                                 className="hidden"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
@@ -186,9 +186,9 @@ export const InfographicSettings: React.FC = () => {
                                         alert('Logo file must be under 2MB.');
                                         return;
                                     }
-                                    const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml'];
+                                    const allowedTypes = ['image/png', 'image/jpeg'];
                                     if (!allowedTypes.includes(file.type)) {
-                                        alert('Only PNG, JPG, and SVG files are allowed.');
+                                        alert('Only PNG and JPG files are allowed.');
                                         return;
                                     }
                                     const reader = new FileReader();
