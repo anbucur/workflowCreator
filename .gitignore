@@ -22,10 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Environment variables
+.env
 
-# SQLite runtime files
+# SQLite database files
+*.sqlite
+*.sqlite3
 *.sqlite-shm
 *.sqlite-wal
+workflow.sqlite
 
 # Environment variables
 .env

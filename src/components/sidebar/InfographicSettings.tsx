@@ -45,6 +45,16 @@ const AccordionSection: React.FC<AccordionSectionProps> = ({ id, title, openSect
 };
 
 /* ------------------------------------------------------------------ */
+/*  Sub-section divider                                                */
+/* ------------------------------------------------------------------ */
+const SubSection: React.FC<{ title: string }> = ({ title }) => (
+    <div className="pt-1">
+        <hr className="border-slate-100 mb-3" />
+        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">{title}</h3>
+    </div>
+);
+
+/* ------------------------------------------------------------------ */
 /*  Main component                                                     */
 /* ------------------------------------------------------------------ */
 export const InfographicSettings: React.FC = () => {
@@ -68,7 +78,6 @@ export const InfographicSettings: React.FC = () => {
 
     const toggle = (id: string) => setOpenSection((prev) => (prev === id ? null : id));
 
-    // Simple heuristic to check if a theme is active
     const activeThemeId = PREDEFINED_THEMES.find(t => phases[0]?.backgroundColor === t.colors[0])?.id;
     const isCustom = !activeThemeId;
 
@@ -77,7 +86,56 @@ export const InfographicSettings: React.FC = () => {
             <h2 className="text-lg font-semibold text-slate-800">Global Settings</h2>
 
             {/* ============================================================ */}
-            {/*  TITLE BAR                                                     */}
+            {/*  1. THEME                                                      */}
+            {/* ============================================================ */}
+            <AccordionSection id="theme" title="Theme" openSection={openSection} onToggle={toggle}>
+                <div className="grid grid-cols-1 gap-2">
+                    <button
+                        onClick={() => { /* no-op: already custom */ }}
+                        className={`flex flex-col gap-1.5 p-3 rounded-lg border text-left transition-all ${isCustom
+                            ? 'border-blue-500 bg-blue-50/50 shadow-sm ring-1 ring-blue-500/20'
+                            : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}
+                    >
+                        <div className="flex items-center justify-between w-full">
+                            <span className="text-xs font-semibold text-slate-700">Custom</span>
+                            {isCustom && <CheckCircle2 size={14} className="text-blue-600" />}
+                        </div>
+                        <p className="text-[10px] text-slate-400">Freestyle — use per-phase colours and your own palette.</p>
+                    </button>
+
+                    {PREDEFINED_THEMES.map((theme) => {
+                        const isActive = activeThemeId === theme.id;
+                        return (
+                            <button
+                                key={theme.id}
+                                onClick={() => applyTheme(theme.id)}
+                                className={`flex flex-col gap-1.5 p-3 rounded-lg border text-left transition-all ${isActive
+                                    ? 'border-blue-500 bg-blue-50/50 shadow-sm ring-1 ring-blue-500/20'
+                                    : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}
+                            >
+                                <div className="flex items-center justify-between w-full">
+                                    <span className="text-xs font-semibold text-slate-700">{theme.name}</span>
+                                    {isActive && <CheckCircle2 size={14} className="text-blue-600" />}
+                                </div>
+                                <div className="flex rounded-md overflow-hidden h-4 w-full border border-slate-200">
+                                    {theme.colors.map((c, i) => (
+                                        <div key={i} className="flex-1 h-full" style={{ backgroundColor: c }} />
+                                    ))}
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                    <span style={{ fontFamily: theme.fonts.headingFont }} className="font-semibold">Aa</span>
+                                    <span>{theme.fonts.headingFont.replace(/'/g, '').split(',')[0]}</span>
+                                    <span>+</span>
+                                    <span>{theme.fonts.bodyFont.replace(/'/g, '').split(',')[0]}</span>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </AccordionSection>
+
+            {/* ============================================================ */}
+            {/*  2. TITLE BAR                                                  */}
             {/* ============================================================ */}
             <AccordionSection id="titlebar" title="Title Bar" openSection={openSection} onToggle={toggle}>
                 <div className="flex flex-col gap-1.5">
@@ -156,7 +214,6 @@ export const InfographicSettings: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Logo */}
                 <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-slate-700">Project Logo</label>
                     {titleBar.logoUrl ? (
@@ -173,22 +230,22 @@ export const InfographicSettings: React.FC = () => {
                         <label className="flex flex-col items-center justify-center p-4 h-24 w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-100 hover:border-slate-400 transition-colors">
                             <ImageIcon size={20} className="text-slate-400 mb-2" />
                             <span className="text-xs font-medium text-slate-600">Upload Logo</span>
-                            <span className="text-[10px] text-slate-400">PNG, JPG, SVG</span>
+                            <span className="text-[10px] text-slate-400">PNG, JPG</span>
                             <input
                                 type="file"
-                                accept="image/png,image/jpeg,image/svg+xml"
+                                accept="image/png,image/jpeg"
                                 className="hidden"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (!file) return;
-                                    const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2MB
+                                    const MAX_LOGO_SIZE = 2 * 1024 * 1024;
                                     if (file.size > MAX_LOGO_SIZE) {
                                         alert('Logo file must be under 2MB.');
                                         return;
                                     }
-                                    const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml'];
+                                    const allowedTypes = ['image/png', 'image/jpeg'];
                                     if (!allowedTypes.includes(file.type)) {
-                                        alert('Only PNG, JPG, and SVG files are allowed.');
+                                        alert('Only PNG and JPG files are allowed.');
                                         return;
                                     }
                                     const reader = new FileReader();
@@ -216,186 +273,141 @@ export const InfographicSettings: React.FC = () => {
             </AccordionSection>
 
             {/* ============================================================ */}
-            {/*  THEME                                                         */}
+            {/*  3. CANVAS & LAYOUT                                            */}
             {/* ============================================================ */}
-            <AccordionSection id="theme" title="Theme" openSection={openSection} onToggle={toggle}>
-                <div className="grid grid-cols-1 gap-2">
-                    {/* Custom (default) option */}
-                    <button
-                        onClick={() => { /* no-op: already custom */ }}
-                        className={`flex flex-col gap-1.5 p-3 rounded-lg border text-left transition-all ${isCustom
-                            ? 'border-blue-500 bg-blue-50/50 shadow-sm ring-1 ring-blue-500/20'
-                            : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}
-                    >
-                        <div className="flex items-center justify-between w-full">
-                            <span className="text-xs font-semibold text-slate-700">Custom</span>
-                            {isCustom && <CheckCircle2 size={14} className="text-blue-600" />}
-                        </div>
-                        <p className="text-[10px] text-slate-400">Freestyle — use per-phase colours and your own palette.</p>
-                    </button>
-
-                    {PREDEFINED_THEMES.map((theme) => {
-                        const isActive = activeThemeId === theme.id;
-                        return (
-                            <button
-                                key={theme.id}
-                                onClick={() => applyTheme(theme.id)}
-                                className={`flex flex-col gap-1.5 p-3 rounded-lg border text-left transition-all ${isActive
-                                    ? 'border-blue-500 bg-blue-50/50 shadow-sm ring-1 ring-blue-500/20'
-                                    : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}
-                            >
-                                <div className="flex items-center justify-between w-full">
-                                    <span className="text-xs font-semibold text-slate-700">{theme.name}</span>
-                                    {isActive && <CheckCircle2 size={14} className="text-blue-600" />}
-                                </div>
-                                <div className="flex rounded-md overflow-hidden h-4 w-full border border-slate-200">
-                                    {theme.colors.map((c, i) => (
-                                        <div key={i} className="flex-1 h-full" style={{ backgroundColor: c }} />
-                                    ))}
-                                </div>
-                                <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                    <span style={{ fontFamily: theme.fonts.headingFont }} className="font-semibold">Aa</span>
-                                    <span>{theme.fonts.headingFont.replace(/'/g, '').split(',')[0]}</span>
-                                    <span>+</span>
-                                    <span>{theme.fonts.bodyFont.replace(/'/g, '').split(',')[0]}</span>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
-            </AccordionSection>
-
-            {/* ============================================================ */}
-            {/*  CARD STYLING                                                  */}
-            {/* ============================================================ */}
-            <AccordionSection id="card-style" title="Card Styling" openSection={openSection} onToggle={toggle}>
-                {/* Shadow */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-700">Card Shadow</label>
-                    <div className="grid grid-cols-5 gap-1">
-                        {(['none', 'soft', 'medium', 'hard', 'neon'] as const).map((s) => (
-                            <button
-                                key={s}
-                                title={s}
-                                onClick={() => updateLayout({ cardShadow: s })}
-                                className={`py-1.5 text-[9px] font-bold capitalize rounded-md border transition-all ${(layout.cardShadow || 'soft') === s ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}`}
-                            >
-                                {s}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Border Style */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-700">Card Border Style</label>
-                    <div className="grid grid-cols-4 gap-1">
-                        {(['none', 'solid', 'dashed', 'dotted'] as const).map((s) => (
-                            <button
-                                key={s}
-                                title={s}
-                                onClick={() => updateLayout({ cardBorderStyle: s })}
-                                className={`py-1.5 text-[9px] font-bold capitalize rounded-md border transition-all ${(layout.cardBorderStyle || 'solid') === s ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}`}
-                            >
-                                {s}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Border Width */}
-                {layout.cardBorderStyle !== 'none' && (
-                    <div className="flex flex-col gap-1.5">
-                        <div className="flex justify-between items-center">
-                            <label className="text-xs font-medium text-slate-700">Border Width</label>
-                            <span className="text-xs font-bold text-primary tabular-nums">{layout.cardBorderWidth ?? 1}px</span>
-                        </div>
-                        <input
-                            type="range"
-                            min={1}
-                            max={5}
-                            value={layout.cardBorderWidth ?? 1}
-                            onChange={(e) => updateLayout({ cardBorderWidth: Number(e.target.value) })}
-                            className="w-full accent-primary"
-                            title="Card border width"
-                        />
-                    </div>
-                )}
-
-                {/* Show Icons toggle */}
-                <div className="flex items-center justify-between py-1">
-                    <div>
-                        <label className="text-xs font-medium text-slate-700">Show Step Icons</label>
-                        <p className="text-[10px] text-slate-400">Display icon in top-right corner of each card</p>
-                    </div>
-                    <button
-                        onClick={() => updateLayout({ showStepIcons: !(layout.showStepIcons ?? true) })}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${(layout.showStepIcons ?? true) ? 'bg-blue-600' : 'bg-slate-200'}`}
-                        title="Toggle step icons"
-                    >
-                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition-transform duration-200 ease-in-out ${(layout.showStepIcons ?? true) ? 'translate-x-4' : 'translate-x-1'}`} />
-                    </button>
-                </div>
-
-                {/* Step Labels configurations */}
-                <hr className="border-slate-100 my-2" />
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Step Type Labels</h3>
-
-                <ColorPicker
-                    label="Label Background"
-                    color={layout.stepLabelColor ?? '#3c83f6'}
-                    onChange={(color) => updateLayout({ stepLabelColor: color })}
-                />
-
-                <ColorPicker
-                    label="Label Text Color"
-                    color={layout.stepLabelTextColor ?? '#ffffff'}
-                    onChange={(color) => updateLayout({ stepLabelTextColor: color })}
-                />
-
-                <div className="grid grid-cols-2 gap-3 mt-1">
-                    <FontSelector
-                        label="Label Font"
-                        value={layout.stepLabelFontFamily}
-                        onChange={(val) => updateLayout({ stepLabelFontFamily: val })}
-                    />
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-slate-700">Size (px)</label>
-                        <input
-                            type="number"
-                            min={6}
-                            max={20}
-                            value={layout.stepLabelFontSize ?? 9}
-                            onChange={(e) => updateLayout({ stepLabelFontSize: Number(e.target.value) })}
-                            className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
-                        />
-                    </div>
-                </div>
-
-                <div className="mt-1">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={layout.stepLabelMatchPhase ?? false}
-                            onChange={(e) => updateLayout({ stepLabelMatchPhase: e.target.checked })}
-                            className="rounded border-slate-300 text-blue-500 focus:ring-blue-500"
-                        />
-                        <span className="text-xs text-slate-600">Match Phase colour (darkened)</span>
-                    </label>
-                    <p className="text-[10px] text-slate-400 mt-1">Uses a slightly darker version of the phase colour as the label background.</p>
-                </div>
-            </AccordionSection>
-
-            {/* ============================================================ */}
-            {/*  PHASE & CANVAS                                                */}
-            {/* ============================================================ */}
-            <AccordionSection id="phase-canvas" title="Phase & Canvas" openSection={openSection} onToggle={toggle}>
+            <AccordionSection id="canvas-layout" title="Canvas & Layout" openSection={openSection} onToggle={toggle}>
                 <ColorPicker
                     label="Canvas Background"
                     color={backgroundColor}
                     onChange={setBackgroundColor}
                 />
 
+                {/* Layout direction */}
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-slate-700">Layout Direction</label>
+                    <div className="flex bg-slate-100 p-1 rounded-lg">
+                        {(['horizontal', 'vertical'] as const).map((dir) => (
+                            <button
+                                key={dir}
+                                onClick={() => updateLayout({ direction: dir })}
+                                className={`flex-1 py-1.5 text-xs font-medium capitalize rounded-md transition-all ${(layout.direction || 'horizontal') === dir
+                                    ? 'bg-white shadow-sm text-slate-800'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                            >
+                                {dir}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Corner radius */}
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex justify-between items-center">
+                        <label className="text-xs font-medium text-slate-700">Corner Radius</label>
+                        <span className="text-xs font-bold text-primary tabular-nums">{layout.cornerRadius ?? 12}px</span>
+                    </div>
+                    <input
+                        type="range"
+                        min={0}
+                        max={32}
+                        value={layout.cornerRadius ?? 12}
+                        onChange={(e) => updateLayout({ cornerRadius: Number(e.target.value) })}
+                        className="w-full accent-primary"
+                        title="Corner radius for cards and phase headers"
+                    />
+                    <p className="text-[10px] text-slate-400 leading-tight">Rounded corners applied to cards and phase headers.</p>
+                </div>
+
+                <SubSection title="Spacing" />
+
+                {/* Phase gap */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <label className="text-xs font-medium text-slate-700">Phase Gap</label>
+                        <p className="text-[10px] text-slate-400">Space between phases</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <input
+                            type="number"
+                            min={0}
+                            max={80}
+                            value={layout.phaseGap ?? 12}
+                            onChange={(e) => updateLayout({ phaseGap: Number(e.target.value) })}
+                            className="w-16 px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500 text-center"
+                            title="Gap between phases"
+                        />
+                        <span className="text-xs text-slate-400">px</span>
+                    </div>
+                </div>
+
+                {/* Step gap */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <label className="text-xs font-medium text-slate-700">Step Gap</label>
+                        <p className="text-[10px] text-slate-400">Space between cards within a phase</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <input
+                            type="number"
+                            min={0}
+                            max={60}
+                            value={layout.stepGap ?? 10}
+                            onChange={(e) => updateLayout({ stepGap: Number(e.target.value) })}
+                            className="w-16 px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500 text-center"
+                            title="Gap between steps"
+                        />
+                        <span className="text-xs text-slate-400">px</span>
+                    </div>
+                </div>
+
+                {/* Padding */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <label className="text-xs font-medium text-slate-700">Canvas Padding</label>
+                        <p className="text-[10px] text-slate-400">Inner padding around the entire canvas</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={layout.padding ?? 20}
+                            onChange={(e) => updateLayout({ padding: Number(e.target.value) })}
+                            className="w-16 px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500 text-center"
+                            title="Canvas padding"
+                        />
+                        <span className="text-xs text-slate-400">px</span>
+                    </div>
+                </div>
+
+                {/* Phase min width */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <label className="text-xs font-medium text-slate-700">Min Phase Width</label>
+                        <p className="text-[10px] text-slate-400">Minimum width of each phase column</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <input
+                            type="number"
+                            min={120}
+                            max={600}
+                            step={10}
+                            value={layout.phaseMinWidth ?? 280}
+                            onChange={(e) => updateLayout({ phaseMinWidth: Number(e.target.value) })}
+                            className="w-16 px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500 text-center"
+                            title="Minimum phase column width"
+                        />
+                        <span className="text-xs text-slate-400">px</span>
+                    </div>
+                </div>
+            </AccordionSection>
+
+            {/* ============================================================ */}
+            {/*  4. PHASES                                                      */}
+            {/* ============================================================ */}
+            <AccordionSection id="phases" title="Phases" openSection={openSection} onToggle={toggle}>
+                {/* Phase typography */}
                 <div className="grid grid-cols-2 gap-3">
                     <FontSelector
                         label="Phase Title Font"
@@ -434,8 +446,11 @@ export const InfographicSettings: React.FC = () => {
                     </div>
                 </div>
 
+                <SubSection title="Background" />
+
+                {/* Phase background pattern */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-slate-700">Phase Background Pattern</label>
+                    <label className="text-xs font-medium text-slate-700">Background Pattern</label>
                     <div className="grid grid-cols-4 gap-1">
                         {([
                             { value: 'none', label: 'None' },
@@ -456,7 +471,7 @@ export const InfographicSettings: React.FC = () => {
                     <p className="text-[10px] text-slate-400 leading-tight">Adds a subtle texture to the phase card area background.</p>
                 </div>
 
-                {/* Phase area tint slider */}
+                {/* Phase area tint */}
                 <div className="flex flex-col gap-1.5">
                     <div className="flex justify-between items-center">
                         <label className="text-xs font-medium text-slate-700">Phase Area Tint</label>
@@ -476,27 +491,7 @@ export const InfographicSettings: React.FC = () => {
                     </p>
                 </div>
 
-                {/* Card tint slider */}
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between items-center">
-                        <label className="text-xs font-medium text-slate-700">Card Tint</label>
-                        <span className="text-xs font-bold text-primary tabular-nums">{layout.cardTintOpacity}%</span>
-                    </div>
-                    <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={layout.cardTintOpacity}
-                        onChange={(e) => updateLayout({ cardTintOpacity: Number(e.target.value) })}
-                        className="w-full accent-primary"
-                        title="Card tint intensity"
-                    />
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                        Controls how much of the phase colour bleeds into each card. 100 = card matches phase colour exactly.
-                    </p>
-                </div>
-
-                {/* Transition sharpness slider */}
+                {/* Colour blend sharpness */}
                 <div className="flex flex-col gap-1.5">
                     <div className="flex justify-between items-center">
                         <label className="text-xs font-medium text-slate-700">Colour Blend Sharpness</label>
@@ -518,9 +513,104 @@ export const InfographicSettings: React.FC = () => {
             </AccordionSection>
 
             {/* ============================================================ */}
-            {/*  CARD TYPOGRAPHY                                               */}
+            {/*  5. CARDS                                                       */}
             {/* ============================================================ */}
-            <AccordionSection id="card-typo" title="Card Typography" openSection={openSection} onToggle={toggle}>
+            <AccordionSection id="cards" title="Cards" openSection={openSection} onToggle={toggle}>
+
+                {/* --- Appearance --- */}
+                <SubSection title="Appearance" />
+
+                {/* Shadow */}
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-slate-700">Card Shadow</label>
+                    <div className="grid grid-cols-5 gap-1">
+                        {(['none', 'soft', 'medium', 'hard', 'neon'] as const).map((s) => (
+                            <button
+                                key={s}
+                                title={s}
+                                onClick={() => updateLayout({ cardShadow: s })}
+                                className={`py-1.5 text-[9px] font-bold capitalize rounded-md border transition-all ${(layout.cardShadow || 'soft') === s ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}`}
+                            >
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Border style */}
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-slate-700">Card Border Style</label>
+                    <div className="grid grid-cols-4 gap-1">
+                        {(['none', 'solid', 'dashed', 'dotted'] as const).map((s) => (
+                            <button
+                                key={s}
+                                title={s}
+                                onClick={() => updateLayout({ cardBorderStyle: s })}
+                                className={`py-1.5 text-[9px] font-bold capitalize rounded-md border transition-all ${(layout.cardBorderStyle || 'solid') === s ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}`}
+                            >
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Border width */}
+                {layout.cardBorderStyle !== 'none' && (
+                    <div className="flex flex-col gap-1.5">
+                        <div className="flex justify-between items-center">
+                            <label className="text-xs font-medium text-slate-700">Border Width</label>
+                            <span className="text-xs font-bold text-primary tabular-nums">{layout.cardBorderWidth ?? 1}px</span>
+                        </div>
+                        <input
+                            type="range"
+                            min={1}
+                            max={5}
+                            value={layout.cardBorderWidth ?? 1}
+                            onChange={(e) => updateLayout({ cardBorderWidth: Number(e.target.value) })}
+                            className="w-full accent-primary"
+                            title="Card border width"
+                        />
+                    </div>
+                )}
+
+                {/* Card tint (moved from Phase & Canvas) */}
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex justify-between items-center">
+                        <label className="text-xs font-medium text-slate-700">Card Tint</label>
+                        <span className="text-xs font-bold text-primary tabular-nums">{layout.cardTintOpacity}%</span>
+                    </div>
+                    <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={layout.cardTintOpacity}
+                        onChange={(e) => updateLayout({ cardTintOpacity: Number(e.target.value) })}
+                        className="w-full accent-primary"
+                        title="Card tint intensity"
+                    />
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                        Controls how much of the phase colour bleeds into each card. 100 = card matches phase colour exactly.
+                    </p>
+                </div>
+
+                {/* Show step icons */}
+                <div className="flex items-center justify-between py-1">
+                    <div>
+                        <label className="text-xs font-medium text-slate-700">Show Step Icons</label>
+                        <p className="text-[10px] text-slate-400">Display icon in top-right corner of each card</p>
+                    </div>
+                    <button
+                        onClick={() => updateLayout({ showStepIcons: !(layout.showStepIcons ?? true) })}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${(layout.showStepIcons ?? true) ? 'bg-blue-600' : 'bg-slate-200'}`}
+                        title="Toggle step icons"
+                    >
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition-transform duration-200 ease-in-out ${(layout.showStepIcons ?? true) ? 'translate-x-4' : 'translate-x-1'}`} />
+                    </button>
+                </div>
+
+                {/* --- Typography --- */}
+                <SubSection title="Typography" />
+
                 <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-slate-700">Text Color Mode</label>
                     <div className="grid grid-cols-3 gap-1">
@@ -551,9 +641,7 @@ export const InfographicSettings: React.FC = () => {
                     </div>
                 )}
 
-                <hr className="border-slate-100 my-1" />
-
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 mt-2">
                     <FontSelector
                         label="Card Title Font"
                         value={layout.cardTitleFontFamily}
@@ -572,7 +660,7 @@ export const InfographicSettings: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 mt-2">
                     <FontSelector
                         label="Card Body Font"
                         value={layout.cardContentFontFamily}
@@ -591,9 +679,7 @@ export const InfographicSettings: React.FC = () => {
                     </div>
                 </div>
 
-                <hr className="border-slate-100 my-2" />
-
-                <div className="grid grid-cols-2 gap-3 items-end">
+                <div className="grid grid-cols-2 gap-3 mt-2 items-end">
                     <FontSelector
                         label="Sub-content Font"
                         value={layout.cardSubtextFontFamily}
@@ -613,10 +699,57 @@ export const InfographicSettings: React.FC = () => {
                     </div>
                 </div>
                 <p className="text-[10px] text-slate-400 mt-1">Agenda items, track labels, action text</p>
+
+                {/* --- Step Type Labels --- */}
+                <SubSection title="Step Type Labels" />
+
+                <ColorPicker
+                    label="Label Background"
+                    color={layout.stepLabelColor ?? '#3c83f6'}
+                    onChange={(color) => updateLayout({ stepLabelColor: color })}
+                />
+
+                <ColorPicker
+                    label="Label Text Color"
+                    color={layout.stepLabelTextColor ?? '#ffffff'}
+                    onChange={(color) => updateLayout({ stepLabelTextColor: color })}
+                />
+
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                    <FontSelector
+                        label="Label Font"
+                        value={layout.stepLabelFontFamily}
+                        onChange={(val) => updateLayout({ stepLabelFontFamily: val })}
+                    />
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-medium text-slate-700">Size (px)</label>
+                        <input
+                            type="number"
+                            min={6}
+                            max={20}
+                            value={layout.stepLabelFontSize ?? 9}
+                            onChange={(e) => updateLayout({ stepLabelFontSize: Number(e.target.value) })}
+                            className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={layout.stepLabelMatchPhase ?? false}
+                            onChange={(e) => updateLayout({ stepLabelMatchPhase: e.target.checked })}
+                            className="rounded border-slate-300 text-blue-500 focus:ring-blue-500"
+                        />
+                        <span className="text-xs text-slate-600">Match Phase colour (darkened)</span>
+                    </label>
+                    <p className="text-[10px] text-slate-400 mt-1">Uses a slightly darker version of the phase colour as the label background.</p>
+                </div>
             </AccordionSection>
 
             {/* ============================================================ */}
-            {/*  ROLES                                                         */}
+            {/*  6. ROLES                                                       */}
             {/* ============================================================ */}
             <AccordionSection id="roles" title="Roles" openSection={openSection} onToggle={toggle}>
                 <RoleManager />
