@@ -126,7 +126,7 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
   const setSelectedElement = useUiStore((s) => s.setSelectedElement);
   const addStep = useInfographicStore((s) => s.addStep);
   const layout = useInfographicStore((s) => s.layout);
-  const { phaseTintOpacity, cardTintOpacity, phaseTransitionSharpness, phaseTitleFontSize, phaseSubtitleFontSize } = layout;
+  const { phaseTintOpacity, cardTintOpacity, phaseTransitionSharpness } = layout;
 
   // White → phase colour interpolation for cards
   const cardBackground = hexMix(phase.backgroundColor, cardTintOpacity / 100);

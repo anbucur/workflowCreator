@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable } from 'lucide-react';
+import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable, Plus } from 'lucide-react';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useExportStore } from '../../store/useExportStore';
 import { useStore } from 'zustand';
@@ -18,6 +18,7 @@ export const Toolbar: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const connectMode = useUiStore((s) => s.connectMode);
     const setConnectMode = useUiStore((s) => s.setConnectMode);
+    const setWizardOpen = useUiStore((s) => s.setWizardOpen);
 
     // Close dropdown on outside click
     React.useEffect(() => {
@@ -107,6 +108,14 @@ export const Toolbar: React.FC = () => {
 
             <div className="flex items-center gap-1">
                 {/* Project File Actions */}
+                <button
+                    onClick={() => setWizardOpen(true)}
+                    className="p-1.5 hover:bg-blue-50 rounded text-blue-600 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-blue-50 border border-blue-200"
+                    title="New Project (Wizard)"
+                >
+                    <Plus size={16} className="text-blue-600" /> New
+                </button>
+
                 <button
                     onClick={() => setExplorerOpen(true)}
                     className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-slate-50 border border-slate-200"

@@ -15,6 +15,7 @@ interface UiStore {
   isDraggingCard: boolean;
   connectMode: boolean;
   connectingFrom: ConnectingFrom | null;
+  wizardOpen: boolean;
 
   setSelectedElement: (el: SelectedElement) => void;
   setSidebarOpen: (open: boolean) => void;
@@ -24,6 +25,7 @@ interface UiStore {
   setIsDraggingCard: (dragging: boolean) => void;
   setConnectMode: (on: boolean) => void;
   setConnectingFrom: (from: ConnectingFrom | null) => void;
+  setWizardOpen: (open: boolean) => void;
 }
 
 export const useUiStore = create<UiStore>((set) => ({
@@ -35,6 +37,7 @@ export const useUiStore = create<UiStore>((set) => ({
   isDraggingCard: false,
   connectMode: false,
   connectingFrom: null,
+  wizardOpen: false,
 
   setSelectedElement: (el) => set({ selectedElement: el, sidebarOpen: true }),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -44,4 +47,5 @@ export const useUiStore = create<UiStore>((set) => ({
   setIsDraggingCard: (dragging) => set({ isDraggingCard: dragging }),
   setConnectMode: (on) => set({ connectMode: on, connectingFrom: on ? null : null }),
   setConnectingFrom: (from) => set({ connectingFrom: from }),
+  setWizardOpen: (open) => set({ wizardOpen: open }),
 }));
