@@ -12,7 +12,10 @@
       "Bash(npm ls better-sqlite3)",
       "Bash(npm uninstall sqlite3)",
       "Bash(npx tsc --noEmit)",
-      "Bash(npm install lucide-react@latest @types/node@latest)"
+      "Bash(npm install lucide-react@latest @types/node@latest)",
+      "Bash(npm run build)",
+      "Bash(npm ls --depth=0)",
+      "Bash(npm install)"
     ]
   }
 }
