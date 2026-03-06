@@ -198,11 +198,15 @@ export interface LayoutConfig {
   cardTitleFontSize?: number;
   cardContentFontSize?: number;
   cardSubtextFontSize?: number;
+  cardSubtextFontFamily?: string;
   stepLabelColor?: string;
   stepLabelTextColor?: string;
   stepLabelFontFamily?: string;
   stepLabelFontSize?: number;
   stepLabelMatchPhase?: boolean;
+
+  cardTextColorMode?: 'default' | 'high-contrast' | 'custom';
+  cardTextColor?: string;
 
   // New UI Customizations
   cardBorderStyle: 'solid' | 'dashed' | 'dotted' | 'none';

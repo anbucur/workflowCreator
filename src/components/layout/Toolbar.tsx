@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable, Plus } from 'lucide-react';
+import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable, Plus, Bot } from 'lucide-react';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useExportStore } from '../../store/useExportStore';
 import { useStore } from 'zustand';
@@ -126,12 +126,27 @@ export const Toolbar: React.FC = () => {
 
                 <div className="w-px h-4 bg-slate-200 mx-2" />
 
+                {/* AI mode toggle */}
+                <button
+                    onClick={() => useUiStore.getState().toggleAiPanel()}
+                    className={`p-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider border ${useUiStore.getState().aiPanelOpen
+                        ? 'bg-purple-50 border-purple-300 text-purple-700'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
+                    title={useUiStore.getState().aiPanelOpen ? 'Close AI Assistant' : 'Open AI Assistant'}
+                >
+                    <Bot size={16} className={useUiStore.getState().aiPanelOpen ? 'text-purple-500' : 'text-slate-500'} />
+                    AI
+                </button>
+
+                <div className="w-px h-4 bg-slate-200 mx-2" />
+
                 {/* Connect mode toggle */}
                 <button
                     onClick={() => setConnectMode(!connectMode)}
                     className={`p-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider border ${connectMode
-                            ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                         }`}
                     title={connectMode ? 'Exit Connect Mode' : 'Enter Connect Mode'}
                 >

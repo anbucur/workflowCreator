@@ -56,7 +56,7 @@ export const CollaborationContent: React.FC<Props> = ({ step, roles }) => {
                         <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0 mt-1.5" />
                       </span>
                     )}
-                    <span className="leading-tight text-slate-700">{action}</span>
+                    <span className="leading-tight">{action}</span>
                   </div>
                 ))}
               </div>
@@ -82,7 +82,7 @@ export const CollaborationContent: React.FC<Props> = ({ step, roles }) => {
               {finalItems.map((item, i) => (
                 <li key={i} className="flex items-start gap-1.5 card-text">
                   <span className="w-1 h-1 rounded-full bg-emerald-400 shrink-0 mt-1.5" />
-                  <span className="leading-tight text-slate-700">{item}</span>
+                  <span className="leading-tight">{item}</span>
                 </li>
               ))}
             </ul>

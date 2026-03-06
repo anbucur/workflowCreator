@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Canvas } from './Canvas';
 import { ExportPreviewModal } from '../export/ExportPreviewModal';
 import { ProjectWizard } from '../wizard/ProjectWizard';
+import { AiChatPanel } from '../ai/AiChatPanel';
 import { useUiStore } from '../../store/useUiStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { Trash2 } from 'lucide-react';
@@ -84,6 +85,7 @@ export const AppShell: React.FC = () => {
                         <Sidebar />
                     </aside>
                 )}
+                <AiChatPanel />
             </main>
 
             {/* Global Drag to Delete Zone — appears only in bottom third */}
@@ -92,8 +94,8 @@ export const AppShell: React.FC = () => {
             >
                 <div
                     className={`max-w-lg mx-auto w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border-2 border-dashed transition-all duration-200 shadow-sm ${inDeleteZone
-                            ? 'bg-red-50 border-red-500 text-red-600'
-                            : 'bg-white border-slate-300 text-slate-400 hover:border-red-300'
+                        ? 'bg-red-50 border-red-500 text-red-600'
+                        : 'bg-white border-slate-300 text-slate-400 hover:border-red-300'
                         }`}
                 >
                     <Trash2 size={18} />

@@ -521,6 +521,38 @@ export const InfographicSettings: React.FC = () => {
             {/*  CARD TYPOGRAPHY                                               */}
             {/* ============================================================ */}
             <AccordionSection id="card-typo" title="Card Typography" openSection={openSection} onToggle={toggle}>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-slate-700">Text Color Mode</label>
+                    <div className="grid grid-cols-3 gap-1">
+                        {([
+                            { value: 'default', label: 'Auto' },
+                            { value: 'high-contrast', label: 'Contrast' },
+                            { value: 'custom', label: 'Custom' },
+                        ] as const).map(({ value, label }) => (
+                            <button
+                                key={value}
+                                title={label}
+                                onClick={() => updateLayout({ cardTextColorMode: value })}
+                                className={`py-1.5 text-[10px] font-bold capitalize rounded-md border transition-all ${(layout.cardTextColorMode || 'default') === value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {layout.cardTextColorMode === 'custom' && (
+                    <div className="mt-1">
+                        <ColorPicker
+                            label="Custom Text Color"
+                            color={layout.cardTextColor ?? '#1a1a2e'}
+                            onChange={(color) => updateLayout({ cardTextColor: color })}
+                        />
+                    </div>
+                )}
+
+                <hr className="border-slate-100 my-1" />
+
                 <div className="grid grid-cols-2 gap-3">
                     <FontSelector
                         label="Card Title Font"
@@ -559,22 +591,28 @@ export const InfographicSettings: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Sub-content font size */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <label className="text-xs font-medium text-slate-700">Sub-content Size (px)</label>
-                        <p className="text-[10px] text-slate-400">Agenda items, track labels, action text</p>
-                    </div>
-                    <input
-                        type="number"
-                        min={7}
-                        max={20}
-                        value={layout.cardSubtextFontSize ?? 9}
-                        onChange={(e) => updateLayout({ cardSubtextFontSize: Number(e.target.value) })}
-                        className="w-16 px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500 text-center"
-                        title="Sub-content font size"
+                <hr className="border-slate-100 my-2" />
+
+                <div className="grid grid-cols-2 gap-3 items-end">
+                    <FontSelector
+                        label="Sub-content Font"
+                        value={layout.cardSubtextFontFamily}
+                        onChange={(val) => updateLayout({ cardSubtextFontFamily: val })}
                     />
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-medium text-slate-700">Sub-content Size (px)</label>
+                        <input
+                            type="number"
+                            min={7}
+                            max={20}
+                            value={layout.cardSubtextFontSize ?? 9}
+                            onChange={(e) => updateLayout({ cardSubtextFontSize: Number(e.target.value) })}
+                            className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500"
+                            title="Sub-content font size"
+                        />
+                    </div>
                 </div>
+                <p className="text-[10px] text-slate-400 mt-1">Agenda items, track labels, action text</p>
             </AccordionSection>
 
             {/* ============================================================ */}

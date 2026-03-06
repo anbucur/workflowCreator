@@ -5,7 +5,7 @@ import { useInfographicStore } from '../../store/useInfographicStore';
 import { StepContentRouter } from './step-content/StepContentRouter';
 import { ConnectorHandle } from './ConnectorHandle';
 import { STEP_TYPE_LABELS } from '../../types';
-import { getContrastTextColor, getContrastMutedColor } from '../../utils/contrast';
+import { getContrastTextColor, getContrastMutedColor, isDarkBackground } from '../../utils/contrast';
 
 // Dynamically render lucide icons by name
 import * as LucideIcons from 'lucide-react';
@@ -109,8 +109,18 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
 
   // Auto-contrast: compute text colours based on card background
   const effectiveBg = cardBackground ?? '#ffffff';
-  const autoTextColor = getContrastTextColor(effectiveBg);
-  const autoMutedColor = getContrastMutedColor(effectiveBg);
+  let autoTextColor = getContrastTextColor(effectiveBg);
+  let autoMutedColor = getContrastMutedColor(effectiveBg);
+
+  if (layout.cardTextColorMode === 'high-contrast') {
+    const isDark = isDarkBackground(effectiveBg);
+    autoTextColor = isDark ? '#ffffff' : '#000000';
+    autoMutedColor = isDark ? '#cccccc' : '#333333';
+  } else if (layout.cardTextColorMode === 'custom') {
+    autoTextColor = layout.cardTextColor ?? '#1a1a2e';
+    autoMutedColor = layout.cardTextColor ?? '#1a1a2e'; // We'll just use the same for custom, or maybe 80% opacity in rendering.
+  }
+
   const autoLabelTextColor = getContrastTextColor(labelBg);
 
   return (
@@ -124,6 +134,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
         borderColor: 'rgba(0,0,0,0.08)',
         boxShadow: layout.cardShadow === 'neon' ? `0 0 15px ${cardBackground ?? 'rgba(0,0,0,0.2)'}` : undefined,
         '--card-subtext-size': `${layout.cardSubtextFontSize ?? 9}px`,
+        '--card-subtext-font': layout.cardSubtextFontFamily || layout.cardContentFontFamily || `'Inter', sans-serif`,
       } as React.CSSProperties}
       onClick={(e) => {
         e.stopPropagation();
@@ -177,6 +188,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
           fontFamily: layout.cardContentFontFamily || `'Inter', sans-serif`,
           fontSize: `${layout.cardContentFontSize ?? 11}px`,
           color: autoMutedColor,
+          opacity: layout.cardTextColorMode === 'custom' ? 0.8 : 1,
         }}
       >
         {step.description}
@@ -186,7 +198,11 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
       {hasContent && (
         <div
           className="mt-3 pt-3 border-t border-slate-100"
-          style={{ fontFamily: layout.cardContentFontFamily || `'Inter', sans-serif`, color: autoMutedColor }}
+          style={{
+            fontFamily: layout.cardContentFontFamily || `'Inter', sans-serif`,
+            color: autoMutedColor,
+            opacity: layout.cardTextColorMode === 'custom' ? 0.8 : 1,
+          }}
         >
           <StepContentRouter step={step} roles={roles} />
         </div>
