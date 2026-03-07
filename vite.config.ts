@@ -38,7 +38,7 @@ const AI_TOOL_DEFINITIONS = [
   { name: 'remove_phase', description: 'Remove a phase and all its steps.', input_schema: { type: 'object', properties: { phaseId: { type: 'string' } }, required: ['phaseId'] } },
   { name: 'update_phase', description: 'Update phase title, subtitle, or colors.', input_schema: { type: 'object', properties: { phaseId: { type: 'string' }, title: { type: 'string' }, subtitle: { type: 'string' }, backgroundColor: { type: 'string' }, textColor: { type: 'string' } }, required: ['phaseId'] } },
   { name: 'reorder_phases', description: 'Move a phase from one position to another (0-based).', input_schema: { type: 'object', properties: { fromIndex: { type: 'number' }, toIndex: { type: 'number' } }, required: ['fromIndex', 'toIndex'] } },
-  { name: 'add_step', description: 'Add a new step to a phase. Returns the new step ID.', input_schema: { type: 'object', properties: { phaseId: { type: 'string' }, type: { type: 'string', enum: STEP_TYPES, description: 'Defaults to standard' } }, required: ['phaseId'] } },
+  { name: 'add_step', description: 'Add a new step to a phase with ALL properties in ONE call. Returns the new step ID. IMPORTANT: Always include title, description, iconName, and data (if applicable) in this single call - NEVER follow with update_step.', input_schema: { type: 'object', properties: { phaseId: { type: 'string' }, type: { type: 'string', enum: STEP_TYPES, description: 'Defaults to standard' }, title: { type: 'string', description: 'Step title' }, description: { type: 'string', description: 'Step description' }, iconName: { type: 'string', description: 'Lucide icon name in kebab-case (e.g. "check-circle", "users", "zap")' }, customLabel: { type: 'string', description: 'Custom badge label' }, data: { type: 'object', description: 'Type-specific data object' } }, required: ['phaseId'] } },
   { name: 'remove_step', description: 'Remove a step from a phase.', input_schema: { type: 'object', properties: { phaseId: { type: 'string' }, stepId: { type: 'string' } }, required: ['phaseId', 'stepId'] } },
   { name: 'update_step', description: 'Update step title, description, icon, or type-specific data.', input_schema: { type: 'object', properties: { phaseId: { type: 'string' }, stepId: { type: 'string' }, title: { type: 'string' }, description: { type: 'string' }, iconName: { type: 'string', description: 'Lucide icon name in kebab-case' }, customLabel: { type: 'string' }, data: { type: 'object', description: 'Type-specific data object' } }, required: ['phaseId', 'stepId'] } },
   { name: 'change_step_type', description: 'Change a step to a different type. Resets type-specific data.', input_schema: { type: 'object', properties: { phaseId: { type: 'string' }, stepId: { type: 'string' }, newType: { type: 'string', enum: STEP_TYPES } }, required: ['phaseId', 'stepId', 'newType'] } },
@@ -49,7 +49,7 @@ const AI_TOOL_DEFINITIONS = [
   { name: 'toggle_step_role', description: 'Assign or unassign a role to/from a step.', input_schema: { type: 'object', properties: { phaseId: { type: 'string' }, stepId: { type: 'string' }, roleId: { type: 'string' } }, required: ['phaseId', 'stepId', 'roleId'] } },
   { name: 'update_layout', description: 'Update layout/styling properties.', input_schema: { type: 'object', properties: { direction: { type: 'string', enum: ['horizontal', 'vertical'] }, phaseGap: { type: 'number' }, stepGap: { type: 'number' }, padding: { type: 'number' }, phaseMinWidth: { type: 'number' }, cornerRadius: { type: 'number' }, phaseTintOpacity: { type: 'number' }, cardTintOpacity: { type: 'number' }, phaseTransitionSharpness: { type: 'number' }, cardBorderStyle: { type: 'string', enum: ['solid', 'dashed', 'dotted', 'none'] }, cardBorderWidth: { type: 'number' }, cardShadow: { type: 'string', enum: ['none', 'soft', 'medium', 'hard', 'neon'] }, showStepIcons: { type: 'boolean' }, phaseBackgroundPattern: { type: 'string', enum: ['none', 'dots', 'grid', 'diagonal'] }, cardTextColorMode: { type: 'string', enum: ['default', 'high-contrast', 'custom'] }, cardTextColor: { type: 'string' } } } },
   { name: 'set_background_color', description: 'Set the canvas background color.', input_schema: { type: 'object', properties: { color: { type: 'string' } }, required: ['color'] } },
-  { name: 'add_connector', description: 'Add a connector between two steps.', input_schema: { type: 'object', properties: { sourceStepId: { type: 'string' }, sourceHandle: { type: 'string', enum: ['top', 'bottom', 'left', 'right'] }, targetStepId: { type: 'string' }, targetHandle: { type: 'string', enum: ['top', 'bottom', 'left', 'right'] }, type: { type: 'string', enum: ['straight', 'curved', 'step', 'loop'] } }, required: ['sourceStepId', 'sourceHandle', 'targetStepId', 'targetHandle'] } },
+  { name: 'add_connector', description: 'Add a visual connector (arrow/line) between two steps. IMPORTANT: Choose handles based on relative positions - source goes TO target, so the arrow points from source toward target. For horizontal workflows (phases left-to-right): if source phase index < target phase index, use sourceHandle="right" and targetHandle="left". If same phase but source step index < target step index, use sourceHandle="bottom" and targetHandle="top". Reverse these if going backwards.', input_schema: { type: 'object', properties: { sourceStepId: { type: 'string', description: 'The step where the connector starts' }, sourceHandle: { type: 'string', enum: ['top', 'bottom', 'left', 'right'], description: 'Which side of the source card to connect from' }, targetStepId: { type: 'string', description: 'The step where the connector ends (arrow points here)' }, targetHandle: { type: 'string', enum: ['top', 'bottom', 'left', 'right'], description: 'Which side of the target card to connect to' }, type: { type: 'string', enum: ['straight', 'curved', 'step', 'loop'], description: 'Defaults to step' } }, required: ['sourceStepId', 'sourceHandle', 'targetStepId', 'targetHandle'] } },
   { name: 'remove_connector', description: 'Remove a connector.', input_schema: { type: 'object', properties: { connectorId: { type: 'string' } }, required: ['connectorId'] } },
   { name: 'update_connector', description: 'Update connector properties.', input_schema: { type: 'object', properties: { connectorId: { type: 'string' }, color: { type: 'string' }, lineStyle: { type: 'string', enum: ['solid', 'dashed', 'dotted'] }, sourceHead: { type: 'string', enum: ['none', 'arrow', 'diamond', 'circle', 'square'] }, targetHead: { type: 'string', enum: ['none', 'arrow', 'diamond', 'circle', 'square'] }, type: { type: 'string', enum: ['straight', 'curved', 'step', 'loop'] }, strokeWidth: { type: 'number' }, label: { type: 'string' } }, required: ['connectorId'] } },
   { name: 'apply_theme', description: 'Apply a predefined theme.', input_schema: { type: 'object', properties: { themeId: { type: 'string', enum: THEME_IDS } }, required: ['themeId'] } },
@@ -57,7 +57,16 @@ const AI_TOOL_DEFINITIONS = [
 ];
 
 function buildAISystemPrompt(snapshot: any): string {
-  return `You are PhaseCraft AI, an assistant that helps users build and edit workflow infographics. You can create phases, add steps, apply themes, manage roles, add connectors, and customize every aspect of the workflow.
+  return `You are an AI assistant built directly into PhaseCraft, a workflow infographic editor.
+Your job is to help the user build, modify, and style their workflow infographic.
+
+CRITICAL INSTRUCTIONS:
+1. When replying to the user, be VERY CONCISE and friendly. Feel free to use emojis appropriately.
+2. DO NOT output long paragraphs. Just clearly state what you did or what you can do.
+3. You have access to the current state of the infographic.
+4. If a user asks to change colors, themes, layout, or content, use the tools.
+5. If the request is complex, break it down into multiple tool calls (which you can do in parallel in one turn).
+6. Provide helpful suggestions if the user is stuck (e.g., "Would you like me to make these steps parallel?").
 
 CAPABILITIES:
 - Create, update, and delete phases (workflow stages/columns)
@@ -70,12 +79,20 @@ CAPABILITIES:
 
 RULES:
 1. Use realistic, professional names and descriptions relevant to the user's domain.
-2. When adding phases and steps, first add the phase, note its returned ID, then add steps to it, then update the steps with meaningful content.
-3. For step types with type-specific data, use update_step with the "data" field after creating the step.
+2. **EFFICIENCY: ALWAYS use add_step with ALL parameters (title, description, iconName, data) in a SINGLE call. NEVER use add_step followed by update_step - this is inefficient and creates extra API calls.**
+3. When adding phases and steps: first add the phase, note its returned ID, then add FULLY-POPULATED steps using add_step with all properties set.
 4. Always reference existing IDs from the current state when updating or removing elements.
 5. Use hex color codes that complement the current theme.
 6. You can execute multiple tool calls in a single response for batch changes.
 7. After making changes, briefly describe what you did.
+8. **CONNECTOR HANDLES**: When adding connectors, choose handles based on the relative positions of the cards:
+   - For horizontal workflows (phases go left-to-right):
+     - If connecting from a step in an earlier phase to a step in a later phase: sourceHandle="right", targetHandle="left"
+     - If connecting from a step in a later phase to a step in an earlier phase (backward): sourceHandle="left", targetHandle="right"
+   - For steps in the SAME phase (stacked vertically):
+     - If source step is above target step: sourceHandle="bottom", targetHandle="top"
+     - If source step is below target step: sourceHandle="top", targetHandle="bottom"
+   - The arrow always points FROM source TO target, so the source handle faces toward the target and the target handle faces toward the source.
 
 AVAILABLE THEMES: ocean-depth, sunset-glow, forest-canopy, corporate-clean, monochrome-slate, midnight-neon, warm-earth, berry-blast
 
@@ -114,7 +131,7 @@ const apiPlugin = () => ({
       res.setHeader('X-Frame-Options', 'DENY');
       res.setHeader('X-XSS-Protection', '1; mode=block');
       res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-      
+
       // Content Security Policy
       const csp = [
         "default-src 'self'",
@@ -128,7 +145,7 @@ const apiPlugin = () => ({
         "form-action 'self'",
       ].join('; ');
       res.setHeader('Content-Security-Policy', csp);
-      
+
       next();
     });
 
@@ -214,12 +231,36 @@ const apiPlugin = () => ({
 
     // ─── AI Chat Endpoint ───────────────────────────────────────────────
     apiApp.post('/ai/chat', async (req: any, res: any) => {
-      const apiKey = process.env.ANTHROPIC_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured. Set it in your .env file and restart the server.' });
+      const { messages, snapshot, model = 'zai' } = req.body;
+
+      let apiKey;
+      let baseURL;
+      let defaultHeaders;
+
+      if (model === 'zai') {
+        apiKey = process.env.ZAI_API_KEY;
+        baseURL = 'https://api.z.ai/api/coding/paas/v4';
+        if (!apiKey) {
+          return res.status(500).json({ error: 'ZAI_API_KEY not configured. Set it in your .env file and restart the server.' });
+        }
+      } else if (model === 'k2p5') {
+        apiKey = process.env.KIMI_API_KEY;
+        baseURL = 'https://api.kimi.com/coding';
+        if (!apiKey) {
+          return res.status(500).json({ error: 'KIMI_API_KEY not configured. Set it in your .env file and restart the server.' });
+        }
+      } else {
+        apiKey = process.env.ANTHROPIC_API_KEY;
+        if (!apiKey) {
+          return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured. Set it in your .env file and restart the server.' });
+        }
+
+        if (apiKey.startsWith('sk-ant-oat')) {
+          baseURL = undefined; // use default
+          defaultHeaders = { 'anthropic-beta': 'oauth-2025-04-20' };
+        }
       }
 
-      const { messages, snapshot } = req.body;
       if (!messages || !Array.isArray(messages)) {
         return res.status(400).json({ error: 'Missing messages array' });
       }
@@ -230,12 +271,178 @@ const apiPlugin = () => ({
       res.setHeader('Connection', 'keep-alive');
       if (res.flushHeaders) res.flushHeaders();
 
-      const anthropic = new Anthropic({ apiKey });
+      const anthropicOpts: any = { apiKey };
+      if (baseURL) anthropicOpts.baseURL = baseURL;
+
+      if (model !== 'k2p5' && apiKey.startsWith('sk-ant-oat')) {
+        anthropicOpts.authToken = apiKey;
+        anthropicOpts.apiKey = null;
+        anthropicOpts.defaultHeaders = defaultHeaders;
+      }
+
+      const anthropic = new Anthropic(anthropicOpts);
 
       try {
         const systemPrompt = buildAISystemPrompt(snapshot);
+
+        if (model === 'zai') {
+          // z.ai uses OpenAI-compatible API
+          const zaiModel = 'glm-5';
+
+          // Convert Anthropic tool definitions to OpenAI format
+          const openAITools = AI_TOOL_DEFINITIONS.map(tool => ({
+            type: 'function',
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: tool.input_schema,
+            }
+          }));
+
+          // Convert messages to OpenAI format
+          const openAIMessages: any[] = [{ role: 'system', content: systemPrompt }];
+          
+          for (const msg of messages) {
+            if (typeof msg.content === 'string') {
+              openAIMessages.push({ role: msg.role, content: msg.content });
+            } else if (Array.isArray(msg.content)) {
+              // Handle complex content blocks (Anthropic format)
+              const textBlocks = msg.content.filter((block: any) => block.type === 'text');
+              const toolUseBlocks = msg.content.filter((block: any) => block.type === 'tool_use');
+              const toolResultBlocks = msg.content.filter((block: any) => block.type === 'tool_result');
+              
+              if (msg.role === 'assistant' && toolUseBlocks.length > 0) {
+                // Assistant message with tool calls
+                const textContent = textBlocks.map((block: any) => block.text).join('\n');
+                const toolCalls = toolUseBlocks.map((block: any) => ({
+                  id: block.id,
+                  type: 'function',
+                  function: {
+                    name: block.name,
+                    arguments: JSON.stringify(block.input),
+                  },
+                }));
+                openAIMessages.push({
+                  role: 'assistant',
+                  content: textContent || null,
+                  tool_calls: toolCalls,
+                });
+              } else if (msg.role === 'user' && toolResultBlocks.length > 0) {
+                // User message with tool results - add each as a separate tool message
+                for (const block of toolResultBlocks) {
+                  openAIMessages.push({
+                    role: 'tool',
+                    tool_call_id: block.tool_use_id,
+                    content: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
+                  });
+                }
+                // Also add any text content as a separate user message if present
+                if (textBlocks.length > 0) {
+                  const textContent = textBlocks.map((block: any) => block.text).join('\n');
+                  if (textContent.trim()) {
+                    openAIMessages.push({ role: 'user', content: textContent });
+                  }
+                }
+              } else {
+                // Regular message with just text blocks
+                const textContent = textBlocks.map((block: any) => block.text).join('\n');
+                openAIMessages.push({ role: msg.role, content: textContent });
+              }
+            }
+          }
+
+          try {
+            const response = await fetch(`${baseURL}/chat/completions`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                model: zaiModel,
+                max_tokens: 8192,
+                messages: openAIMessages,
+                tools: openAITools,
+              }),
+            });
+
+            const data = await response.json() as any;
+
+            if (!response.ok) {
+              console.log('ZAI ERROR:', JSON.stringify(data, null, 2));
+              res.write(`event: error\ndata: ${JSON.stringify({ message: data.error?.message || `HTTP ${response.status}` })}\n\n`);
+              res.end();
+              return;
+            }
+
+            console.log('ZAI RAW RESPONSE:', JSON.stringify(data, null, 2));
+
+            const message = data.choices?.[0]?.message;
+            const content = message?.content || '';
+            const toolCalls = message?.tool_calls || [];
+
+            // Simulate text_delta event for content
+            if (content) {
+              const textData = JSON.stringify({ text: content });
+              res.write(`event: text_delta\ndata: ${textData}\n\n`);
+            }
+
+            // Simulate tool_use events for each tool call
+            for (const tc of toolCalls) {
+              const toolData = JSON.stringify({
+                id: tc.id,
+                name: tc.function?.name,
+                input: tc.function?.arguments ? JSON.parse(tc.function.arguments) : {}
+              });
+              res.write(`event: tool_use\ndata: ${toolData}\n\n`);
+            }
+
+            // Determine stop reason
+            const stopReason = toolCalls.length > 0 ? 'tool_use' : 'end_turn';
+            const doneData = JSON.stringify({ stop_reason: stopReason });
+            res.write(`event: done\ndata: ${doneData}\n\n`);
+            res.end();
+            return;
+          } catch (fetchError: any) {
+            console.log('ZAI FETCH ERROR:', fetchError.message);
+            res.write(`event: error\ndata: ${JSON.stringify({ message: fetchError.message })}\n\n`);
+            res.end();
+            return;
+          }
+        }
+
+        if (model === 'k2p5') {
+          // Kimi doesn't support streaming reliably, so we do a standard call
+          // and simulate the stream events for the frontend.
+          const response = await anthropic.messages.create({
+            model: model,
+            max_tokens: 8192,
+            system: systemPrompt,
+            messages,
+            tools: AI_TOOL_DEFINITIONS as any,
+          });
+
+          console.log('KIMI RAW RESPONSE:', JSON.stringify(response, null, 2));
+
+          for (const block of response.content) {
+            if (block.type === 'text') {
+              // Simulate text_delta
+              const data = JSON.stringify({ text: block.text });
+              res.write(`event: text_delta\ndata: ${data}\n\n`);
+            } else if (block.type === 'tool_use') {
+              // Simulate tool_use
+              const data = JSON.stringify({ id: block.id, name: block.name, input: block.input });
+              res.write(`event: tool_use\ndata: ${data}\n\n`);
+            }
+          }
+          const data = JSON.stringify({ stop_reason: response.stop_reason });
+          res.write(`event: done\ndata: ${data}\n\n`);
+          res.end();
+          return;
+        }
+
         const stream = anthropic.messages.stream({
-          model: 'claude-sonnet-4-20250514',
+          model: model,
           max_tokens: 8192,
           system: systemPrompt,
           messages,

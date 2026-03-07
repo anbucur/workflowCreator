@@ -7,6 +7,8 @@ import { ProjectWizard } from '../wizard/ProjectWizard';
 import { AiChatPanel } from '../ai/AiChatPanel';
 import { useUiStore } from '../../store/useUiStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
+import { useThemeStore } from '../../store/useThemeStore';
+import { useAiChatStore } from '../../store/useAiChatStore';
 import { Trash2 } from 'lucide-react';
 
 export const AppShell: React.FC = () => {
@@ -20,6 +22,7 @@ export const AppShell: React.FC = () => {
     // Sidebar resize state
     const [sidebarWidth, setSidebarWidth] = React.useState(350);
     const [isResizing, setIsResizing] = React.useState(false);
+    const isDarkMode = useThemeStore((s) => s.isDarkMode);
 
     React.useEffect(() => {
         if (!isDraggingCard) {
@@ -60,16 +63,16 @@ export const AppShell: React.FC = () => {
     }, [isResizing]);
 
     return (
-        <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-display">
+        <div className={`flex flex-col h-screen w-full overflow-hidden font-display transition-colors duration-300 ${isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
             <Toolbar />
             <main className="flex flex-1 overflow-hidden min-h-0">
-                <div className="flex-1 relative overflow-auto p-4 md:p-8 bg-slate-50 w-full isolate">
+                <div className={`flex-1 relative overflow-auto p-4 md:p-8 w-full isolate transition-colors duration-300 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
                     <Canvas />
                 </div>
 
                 {sidebarOpen && (
                     <aside
-                        className="border-l border-slate-200 bg-white flex flex-col shrink-0 overflow-y-auto relative"
+                        className={`border-l flex flex-col shrink-0 overflow-y-auto relative transition-colors duration-300 ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'}`}
                         style={{ width: `${sidebarWidth}px` }}
                     >
                         {/* Resize handler */}
@@ -109,9 +112,20 @@ export const AppShell: React.FC = () => {
 
             {wizardOpen && (
                 <ProjectWizard
-                    onComplete={(data) => {
+                    onComplete={(data, themeId, aiPrompt) => {
                         loadInfographic(data);
                         setWizardOpen(false);
+                        
+                        // If AI prompt was provided, open AI panel and send the message
+                        if (aiPrompt) {
+                            const { setAiPanelOpen } = useUiStore.getState();
+                            const { sendMessage } = useAiChatStore.getState();
+                            setAiPanelOpen(true);
+                            // Small delay to ensure panel is open before sending
+                            setTimeout(() => {
+                                sendMessage(aiPrompt);
+                            }, 100);
+                        }
                     }}
                     onClose={() => setWizardOpen(false)}
                 />

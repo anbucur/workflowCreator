@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Step, RoleDefinition, CollaborationData } from '../../../types';
+import { useInfographicStore } from '../../../store/useInfographicStore';
 import { ArrowDown, Flag, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -10,6 +11,10 @@ interface Props {
 export const CollaborationContent: React.FC<Props> = ({ step, roles }) => {
   const { participants, iterative, finalActionTitle, finalItems } = step.data;
   const hasGoal = finalItems && finalItems.length > 0;
+  const layout = useInfographicStore((s) => s.layout);
+  const subcontentTitleFontFamily = layout.subcontentTitleFontFamily || "'Inter', sans-serif";
+  const subcontentTitleFontSize = layout.subcontentTitleFontSize || 9;
+  const subcontentTitleColor = layout.subcontentTitleColor || '#94a3b8';
 
   // Group participants by roleId
   const grouped: { role: RoleDefinition | undefined; actions: string[] }[] = [];
@@ -29,8 +34,11 @@ export const CollaborationContent: React.FC<Props> = ({ step, roles }) => {
         <div className={`rounded-lg shadow-sm border border-slate-100 ${iterative ? 'bg-indigo-50/30' : 'bg-white/40'}`}>
           {/* Inner header — same pattern as AGENDA label */}
           {iterative && (
-            <p className="flex items-center gap-1 text-[9px] font-bold text-indigo-400 uppercase tracking-wider px-2 pt-2 pb-0.5">
-              <RefreshCw size={8} className="text-indigo-400" />
+            <p 
+              className="flex items-center gap-1 font-bold uppercase tracking-wider px-2 pt-2 pb-0.5"
+              style={{ fontFamily: subcontentTitleFontFamily, fontSize: `${subcontentTitleFontSize}px`, color: subcontentTitleColor }}
+            >
+              <RefreshCw size={8} style={{ color: subcontentTitleColor }} />
               Iterative Loop
             </p>
           )}
@@ -46,7 +54,7 @@ export const CollaborationContent: React.FC<Props> = ({ step, roles }) => {
                           className="inline-flex items-center justify-center font-bold rounded text-[8px] px-1.5 py-0.5 shrink-0 mt-0.5"
                           style={{ backgroundColor: group.role.color, color: group.role.textColor || '#fff' }}
                         >
-                          {group.role.name.substring(0, 3).toUpperCase()}
+                          {(group.role.tag || group.role.name.substring(0, 3)).toUpperCase()}
                         </span>
                       ) : (
                         <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0 mt-1.5" />
@@ -71,10 +79,13 @@ export const CollaborationContent: React.FC<Props> = ({ step, roles }) => {
             <ArrowDown size={12} className="text-slate-300" />
           </div>
 
-          <div className="rounded-md border border-emerald-200 bg-emerald-50/50 overflow-hidden">
+            <div className="rounded-md border border-emerald-200 bg-emerald-50/50 overflow-hidden">
             <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-100/60 border-b border-emerald-200">
-              <Flag size={9} className="text-emerald-500" />
-              <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">
+              <Flag size={9} style={{ color: subcontentTitleColor }} />
+              <span 
+                className="font-bold uppercase tracking-wider"
+                style={{ fontFamily: subcontentTitleFontFamily, fontSize: `${subcontentTitleFontSize}px`, color: subcontentTitleColor }}
+              >
                 {finalActionTitle || 'Goal / Output'}
               </span>
             </div>

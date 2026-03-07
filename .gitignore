@@ -32,5 +32,3 @@ dist-ssr
 *.sqlite-wal
 workflow.sqlite
 
-# Environment variables
-.env

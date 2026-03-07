@@ -209,7 +209,7 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
         className="p-3 flex flex-col items-center justify-center cursor-pointer border-b border-transparent hover:border-slate-200 transition-colors shrink-0 h-[72px] text-center"
         style={{
           background: phaseGradient(1),
-          color: phase.textColor,
+          color: layout.useGlobalPhaseTextColor ? layout.globalPhaseTextColor : phase.textColor,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -219,8 +219,9 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
         <h2
           className="font-bold uppercase tracking-wider leading-tight w-full text-center"
           style={{
-            fontSize: layout.phaseTitleFontSize ? `${layout.phaseTitleFontSize}px` : '11px',
-            fontFamily: layout.phaseTitleFontFamily || `'Inter', sans-serif`
+            fontSize: layout.phaseTitleFontSize ? `${layout.phaseTitleFontSize}px` : '15px',
+            fontFamily: layout.phaseTitleFontFamily || `'Inter', sans-serif`,
+            color: layout.useGlobalPhaseTextColor ? layout.globalPhaseTextColor : layout.phaseTitleColor,
           }}
         >
           {phase.title}
@@ -228,8 +229,9 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
         <p
           className="opacity-80 mt-0.5 line-clamp-2 text-center"
           style={{
-            fontSize: layout.phaseSubtitleFontSize ? `${layout.phaseSubtitleFontSize}px` : '10px',
-            fontFamily: layout.phaseSubtitleFontFamily || `'Inter', sans-serif`
+            fontSize: layout.phaseSubtitleFontSize ? `${layout.phaseSubtitleFontSize}px` : '15px',
+            fontFamily: layout.phaseSubtitleFontFamily || `'Inter', sans-serif`,
+            color: layout.useGlobalPhaseTextColor ? layout.globalPhaseTextColor : layout.phaseSubtitleColor,
           }}
         >
           {phase.subtitle}

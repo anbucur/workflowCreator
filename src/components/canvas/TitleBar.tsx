@@ -47,8 +47,9 @@ export const TitleBar: React.FC = () => {
           <p
             className="uppercase tracking-widest mt-2 opacity-80"
             style={{
-              fontSize: titleBar.subtitleFontSize ? `${titleBar.subtitleFontSize}px` : '14px',
-              fontFamily: titleBar.subtitleFontFamily || `'Inter', sans-serif`
+              fontSize: titleBar.subtitleFontSize ? `${titleBar.subtitleFontSize}px` : '16px',
+              fontFamily: titleBar.subtitleFontFamily || `'Inter', sans-serif`,
+              color: titleBar.subtitleColor || 'inherit'
             }}
           >
             {titleBar.subtitle}

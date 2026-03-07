@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useThemeStore } from '../../store/useThemeStore';
 
 export interface DropdownOption {
     value: string;
@@ -19,6 +20,7 @@ interface Props {
 export const Dropdown: React.FC<Props> = ({ options, value, onChange, placeholder = 'Select...', className = '' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
+    const isDarkMode = useThemeStore((s) => s.isDarkMode);
 
     const selectedOption = options.find((o) => o.value === value);
 
@@ -34,7 +36,7 @@ export const Dropdown: React.FC<Props> = ({ options, value, onChange, placeholde
 
     const renderOptionContent = (option: DropdownOption) => (
         <span className="flex items-center gap-2 truncate">
-            {option.icon && <span className="flex-shrink-0 text-slate-500">{option.icon}</span>}
+            {option.icon && <span className={`flex-shrink-0 transition-colors duration-300 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{option.icon}</span>}
             {option.color && <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: option.color }} />}
             <span className="truncate">{option.label}</span>
         </span>
@@ -44,21 +46,21 @@ export const Dropdown: React.FC<Props> = ({ options, value, onChange, placeholde
         <div ref={ref} className={`relative ${className}`}>
             <button
                 type="button"
-                className="w-full flex items-center justify-between px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-500 bg-white"
+                className={`w-full flex items-center justify-between px-3 py-1.5 text-sm border rounded focus:outline-none focus:border-blue-500 transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
                 onClick={() => setIsOpen(!isOpen)}
             >
                 {selectedOption ? (
                     renderOptionContent(selectedOption)
                 ) : (
-                    <span className="text-slate-500 truncate">{placeholder}</span>
+                    <span className={`truncate transition-colors duration-300 ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>{placeholder}</span>
                 )}
-                <ChevronDown size={14} className="text-slate-500 flex-shrink-0 ml-1" />
+                <ChevronDown size={14} className={`flex-shrink-0 ml-1 transition-colors duration-300 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
             </button>
             {isOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded shadow-sm max-h-48 overflow-auto py-1">
+                <div className={`absolute z-10 w-full mt-1 border rounded shadow-sm max-h-48 overflow-auto py-1 transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-200'}`}>
                     <button
                         type="button"
-                        className="w-full flex items-center px-3 py-1.5 text-sm text-left hover:bg-slate-50 text-slate-500 italic"
+                        className={`w-full flex items-center px-3 py-1.5 text-sm text-left italic transition-colors duration-300 ${isDarkMode ? 'hover:bg-slate-700 text-slate-500' : 'hover:bg-slate-50 text-slate-500'}`}
                         onClick={() => {
                             onChange('');
                             setIsOpen(false);
@@ -70,7 +72,7 @@ export const Dropdown: React.FC<Props> = ({ options, value, onChange, placeholde
                         <button
                             key={option.value}
                             type="button"
-                            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left hover:bg-slate-50 text-slate-700"
+                            className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left transition-colors duration-300 ${isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-50 text-slate-700'}`}
                             onClick={() => {
                                 onChange(option.value);
                                 setIsOpen(false);

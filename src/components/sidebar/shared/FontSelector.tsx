@@ -1,5 +1,6 @@
 import React from 'react';
 import { Dropdown, type DropdownOption } from '../../shared/Dropdown';
+import { useThemeStore } from '../../../store/useThemeStore';
 
 export const FONT_OPTIONS: DropdownOption[] = [
     { label: 'Inter', value: `'Inter', sans-serif` },
@@ -22,9 +23,10 @@ interface FontSelectorProps {
 }
 
 export const FontSelector: React.FC<FontSelectorProps> = ({ label, value, onChange }) => {
+    const isDarkMode = useThemeStore((s) => s.isDarkMode);
     return (
         <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-700">{label}</label>
+            <label className={`text-xs font-medium transition-colors duration-300 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{label}</label>
             <Dropdown
                 options={FONT_OPTIONS}
                 value={value || FONT_OPTIONS[0].value}

@@ -24,6 +24,8 @@ interface AiChatStore {
   sendMessage: (text: string) => Promise<void>;
   clearHistory: () => void;
   setError: (error: string | null) => void;
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
 }
 
 export const useAiChatStore = create<AiChatStore>((set, get) => ({
@@ -31,8 +33,10 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   apiMessages: [],
   isStreaming: false,
   error: null,
+  selectedModel: 'zai',
 
   setError: (error) => set({ error }),
+  setSelectedModel: (model) => set({ selectedModel: model }),
 
   clearHistory: () => set({ messages: [], apiMessages: [], error: null }),
 
@@ -70,7 +74,7 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
         const response = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: currentApiMessages, snapshot }),
+          body: JSON.stringify({ messages: currentApiMessages, snapshot, model: get().selectedModel }),
         });
 
         if (!response.ok) {

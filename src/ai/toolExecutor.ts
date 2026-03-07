@@ -66,6 +66,16 @@ export function executeTool(
         store.addStep(phaseId, stepType);
         const afterPhase = useInfographicStore.getState().phases.find(p => p.id === phaseId);
         const newStep = afterPhase?.steps.find(s => !beforeStepIds.includes(s.id));
+
+        // If additional properties are provided, update the step in the same call
+        if (newStep && (toolInput.title || toolInput.description || toolInput.iconName || toolInput.customLabel || toolInput.data)) {
+          const updates: Record<string, unknown> = {};
+          for (const key of ['title', 'description', 'iconName', 'customLabel', 'data']) {
+            if (toolInput[key] !== undefined) updates[key] = toolInput[key];
+          }
+          useInfographicStore.getState().updateStep(phaseId, newStep.id, updates as any);
+        }
+
         result = { success: true, stepId: newStep?.id, message: `Step created with ID ${newStep?.id}` };
         break;
       }

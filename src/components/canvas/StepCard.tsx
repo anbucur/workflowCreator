@@ -105,7 +105,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
     ? darkenColor(phaseColor ?? layout.stepLabelColor ?? '#3c83f6', 0.25)
     : (layout.stepLabelColor ?? '#3c83f6');
   const labelFontFamily = layout.stepLabelFontFamily || `'Inter', sans-serif`;
-  const labelFontSize = layout.stepLabelFontSize ?? 9;
+  const labelFontSize = layout.stepLabelFontSize ?? 10;
 
   // Auto-contrast: compute text colours based on card background
   const effectiveBg = cardBackground ?? '#ffffff';
@@ -133,8 +133,9 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
         borderWidth: layout.cardBorderStyle === 'none' ? '0px' : `${layout.cardBorderWidth || 1}px`,
         borderColor: 'rgba(0,0,0,0.08)',
         boxShadow: layout.cardShadow === 'neon' ? `0 0 15px ${cardBackground ?? 'rgba(0,0,0,0.2)'}` : undefined,
-        '--card-subtext-size': `${layout.cardSubtextFontSize ?? 9}px`,
+        '--card-subtext-size': `${layout.cardSubtextFontSize ?? 15}px`,
         '--card-subtext-font': layout.cardSubtextFontFamily || layout.cardContentFontFamily || `'Inter', sans-serif`,
+        '--card-subtext-color': layout.cardSubtextColor || autoMutedColor,
       } as React.CSSProperties}
       onClick={(e) => {
         e.stopPropagation();
@@ -154,7 +155,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
             className="font-bold px-1.5 py-0.5 rounded uppercase tracking-widest"
             style={{
               backgroundColor: labelBg,
-              color: autoLabelTextColor,
+              color: layout.stepLabelTextColor || autoLabelTextColor,
               opacity: 0.9,
               fontFamily: labelFontFamily,
               fontSize: `${labelFontSize}px`,
@@ -167,7 +168,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
         )}
 
         <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-          {showIcon && iconToRender && React.createElement(iconToRender, { size: 20, style: { color: autoMutedColor } })}
+          {showIcon && iconToRender && React.createElement(iconToRender, { size: 20, style: { color: layout.stepIconColor || autoMutedColor } })}
         </div>
       </div>
 
@@ -176,8 +177,8 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
         className="font-bold leading-tight mb-1"
         style={{
           fontFamily: layout.cardTitleFontFamily || `'Inter', sans-serif`,
-          fontSize: `${layout.cardTitleFontSize ?? 12}px`,
-          color: autoTextColor,
+          fontSize: `${layout.cardTitleFontSize ?? 16}px`,
+          color: layout.cardTitleColor || autoTextColor,
         }}
       >
         {step.title}
@@ -186,9 +187,9 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
         className="leading-snug"
         style={{
           fontFamily: layout.cardContentFontFamily || `'Inter', sans-serif`,
-          fontSize: `${layout.cardContentFontSize ?? 11}px`,
-          color: autoMutedColor,
-          opacity: layout.cardTextColorMode === 'custom' ? 0.8 : 1,
+          fontSize: `${layout.cardContentFontSize ?? 16}px`,
+          color: layout.cardContentColor || autoMutedColor,
+          opacity: (layout.cardContentColor || layout.cardTextColorMode === 'custom') ? 0.9 : 0.8,
         }}
       >
         {step.description}
@@ -197,11 +198,11 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
       {/* Type-specific content — full width */}
       {hasContent && (
         <div
-          className="mt-3 pt-3 border-t border-slate-100"
+          className="mt-2 pt-2 border-t border-slate-100"
           style={{
             fontFamily: layout.cardContentFontFamily || `'Inter', sans-serif`,
-            color: autoMutedColor,
-            opacity: layout.cardTextColorMode === 'custom' ? 0.8 : 1,
+            color: layout.cardContentColor || autoMutedColor,
+            opacity: (layout.cardContentColor || layout.cardTextColorMode === 'custom') ? 0.9 : 1,
           }}
         >
           <StepContentRouter step={step} roles={roles} />
@@ -221,7 +222,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
                   style={{ backgroundColor: role.color, color: role.textColor || '#ffffff', zIndex: 10 - i, marginLeft: i > 0 ? '-6px' : '0' }}
                   title={role.name}
                 >
-                  {role.name.substring(0, 3).toUpperCase()}
+                  {(role.tag || role.name.substring(0, 3)).toUpperCase()}
                 </div>
               ))}
             </div>

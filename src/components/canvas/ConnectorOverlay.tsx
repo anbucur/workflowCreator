@@ -257,6 +257,12 @@ export const ConnectorOverlay: React.FC = () => {
     }, [computePaths]);
 
     useEffect(() => {
+        if (!connectingFrom) {
+            setDrawPath(null);
+        }
+    }, [connectingFrom]);
+
+    useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (connectingFrom && svgRef.current) {
                 const container = svgRef.current.closest('.infographic-root') as HTMLElement | null;

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Step, RoleDefinition, MeetingData } from '../../../types';
+import { useInfographicStore } from '../../../store/useInfographicStore';
 import { CheckSquare, Scale } from 'lucide-react';
 
 interface Props {
@@ -9,11 +10,19 @@ interface Props {
 
 export const MeetingContent: React.FC<Props> = ({ step }) => {
   const { agendaItems, hasDecision, decision } = step.data;
+  const layout = useInfographicStore((s) => s.layout);
+  const subcontentTitleFontFamily = layout.subcontentTitleFontFamily || "'Inter', sans-serif";
+  const subcontentTitleFontSize = layout.subcontentTitleFontSize || 9;
+  const subcontentTitleColor = layout.subcontentTitleColor || '#94a3b8';
+  
   return (
     <div className="space-y-2">
       {agendaItems && agendaItems.length > 0 && (
         <div className="bg-white/50 rounded-lg p-2 border border-slate-100 shadow-sm">
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+          <p 
+            className="font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1"
+            style={{ fontFamily: subcontentTitleFontFamily, fontSize: `${subcontentTitleFontSize}px`, color: subcontentTitleColor }}
+          >
             <CheckSquare size={9} className="text-blue-400" /> Agenda
           </p>
           <ul className="space-y-1">
@@ -29,7 +38,10 @@ export const MeetingContent: React.FC<Props> = ({ step }) => {
 
       {hasDecision && decision && (
         <div className="bg-amber-50/50 rounded-lg p-2 border border-amber-100/50 shadow-sm">
-          <p className="text-[9px] font-bold text-amber-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+          <p 
+            className="font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1"
+            style={{ fontFamily: subcontentTitleFontFamily, fontSize: `${subcontentTitleFontSize}px`, color: subcontentTitleColor }}
+          >
             <Scale size={9} className="text-amber-500" /> Decision Gate
           </p>
           <ul className="space-y-1 mb-1.5">

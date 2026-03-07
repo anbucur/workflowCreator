@@ -1,6 +1,7 @@
 export interface RoleDefinition {
   id: string;
   name: string;
+  tag?: string;
   color: string;
   textColor: string;
 }
@@ -57,6 +58,7 @@ export interface DocumentItem {
   id: string;
   name: string;
   docType: string;
+  icon?: string; // Lucide icon name
 }
 
 export interface DocumentData {
@@ -166,6 +168,7 @@ export interface TitleBarConfig {
   subtitle?: string;
   backgroundColor: string;
   textColor: string;
+  subtitleColor?: string;
   fontSize: number;
   subtitleFontSize?: number;
   alignment?: 'left' | 'center' | 'right';
@@ -193,12 +196,17 @@ export interface LayoutConfig {
   phaseSubtitleFontSize?: number;
   phaseTitleFontFamily?: string;
   phaseSubtitleFontFamily?: string;
+  phaseTitleColor?: string;
+  phaseSubtitleColor?: string;
   cardTitleFontFamily?: string;
   cardContentFontFamily?: string;
   cardTitleFontSize?: number;
   cardContentFontSize?: number;
   cardSubtextFontSize?: number;
   cardSubtextFontFamily?: string;
+  cardTitleColor?: string;
+  cardContentColor?: string;
+  cardSubtextColor?: string;
   stepLabelColor?: string;
   stepLabelTextColor?: string;
   stepLabelFontFamily?: string;
@@ -208,12 +216,22 @@ export interface LayoutConfig {
   cardTextColorMode?: 'default' | 'high-contrast' | 'custom';
   cardTextColor?: string;
 
+  // Subcontent title settings (e.g., "AGENDA", "Tracks")
+  subcontentTitleFontFamily?: string;
+  subcontentTitleFontSize?: number;
+  subcontentTitleColor?: string;
+
+  // Global phase text color override
+  useGlobalPhaseTextColor?: boolean;
+  globalPhaseTextColor?: string;
+
   // New UI Customizations
   cardBorderStyle: 'solid' | 'dashed' | 'dotted' | 'none';
   cardBorderWidth: number;
-  cardShadow: 'none' | 'soft' | 'medium' | 'hard' | 'neon';
-  showStepIcons: boolean;
-  phaseBackgroundPattern: 'none' | 'dots' | 'grid' | 'diagonal';
+  cardShadow?: 'none' | 'soft' | 'medium' | 'hard' | 'neon';
+  showStepIcons?: boolean;
+  stepIconColor?: string;
+  phaseBackgroundPattern?: 'none' | 'dots' | 'grid' | 'diagonal';
 }
 
 export type ConnectorHandlePosition = 'top' | 'bottom' | 'left' | 'right';
@@ -239,6 +257,7 @@ export interface Connector {
 
 export interface InfographicData {
   id: string;
+  name?: string;
   titleBar: TitleBarConfig;
   roles: RoleDefinition[];
   phases: Phase[];

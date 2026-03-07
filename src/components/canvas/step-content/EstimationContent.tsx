@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Step, RoleDefinition, EstimationData } from '../../../types';
+import { useInfographicStore } from '../../../store/useInfographicStore';
 
 const TSHIRT_COLORS: Record<string, { backgroundColor: string; color: string }> = {
   XS: { backgroundColor: '#dbeafe', color: '#1e40af' },
@@ -17,6 +18,9 @@ interface Props {
 
 export const EstimationContent: React.FC<Props> = ({ step }) => {
   const { method, value, breakdown } = step.data;
+  const layout = useInfographicStore((s) => s.layout);
+  const subtextFontFamily = layout.cardSubtextFontFamily || "'Inter', sans-serif";
+  const subtextFontSize = layout.cardSubtextFontSize || 9;
   return (
     <div className="space-y-1">
       {value && method === 'tshirt' && (
@@ -36,7 +40,7 @@ export const EstimationContent: React.FC<Props> = ({ step }) => {
         <div className="mt-1 space-y-0.5">
           {breakdown.map((b, i) => (
             <div key={i} className="flex justify-between card-text">
-              <span className="opacity-70">{b.label}</span>
+              <span style={{ fontFamily: subtextFontFamily, fontSize: `${subtextFontSize}px`, opacity: 0.7 }}>{b.label}</span>
               <span
                 className="font-semibold px-1 rounded"
                 style={

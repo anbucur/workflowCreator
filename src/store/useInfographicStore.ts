@@ -3,6 +3,9 @@ import type { InfographicData, Phase, Step, RoleDefinition, TitleBarConfig, Layo
 import { createDefaultInfographic, createPhase, createStep, createRole, createId } from '../types/defaults';
 
 interface InfographicStore extends InfographicData {
+  // Project properties
+  setProjectName: (name: string) => void;
+
   // Title bar
   updateTitleBar: (updates: Partial<TitleBarConfig>) => void;
 
@@ -47,6 +50,7 @@ interface InfographicStore extends InfographicData {
 function extractData(state: InfographicStore): InfographicData {
   return {
     id: state.id,
+    name: state.name,
     titleBar: state.titleBar,
     roles: state.roles,
     phases: state.phases,
@@ -58,7 +62,6 @@ function extractData(state: InfographicStore): InfographicData {
 
 import { temporal } from 'zundo';
 import { PREDEFINED_THEMES } from '../utils/themes';
-import { getContrastTextColor } from '../utils/contrast';
 import { sanitizeInfographicData } from '../utils/validation';
 
 const defaultData = createDefaultInfographic();
@@ -66,6 +69,8 @@ const defaultData = createDefaultInfographic();
 export const useInfographicStore = create<InfographicStore>()(
   temporal((set, get) => ({
     ...defaultData,
+
+    setProjectName: (name) => set({ name }),
 
     updateTitleBar: (updates) => set((s) => ({ titleBar: { ...s.titleBar, ...updates } })),
 
@@ -180,7 +185,7 @@ export const useInfographicStore = create<InfographicStore>()(
     updateLayout: (updates) => set((s) => ({ layout: { ...s.layout, ...updates } })),
     setBackgroundColor: (color) => set({ backgroundColor: color }),
 
-    addConnector: (sourceStepId, sourceHandle, targetStepId, targetHandle, type = 'straight') => set((s) => {
+    addConnector: (sourceStepId, sourceHandle, targetStepId, targetHandle, type = 'step') => set((s) => {
       // Don't add if going from/to the exact same handle
       if (sourceStepId === targetStepId && sourceHandle === targetHandle) return s;
 
@@ -250,7 +255,7 @@ export const useInfographicStore = create<InfographicStore>()(
         return {
           ...phase,
           backgroundColor: theme.colors[colorIndex],
-          textColor: getContrastTextColor(theme.colors[colorIndex]),
+          textColor: theme.phaseTextColor || phase.textColor,
         };
       });
 
@@ -271,6 +276,12 @@ export const useInfographicStore = create<InfographicStore>()(
           cardTitleFontFamily: theme.fonts.headingFont,
           cardContentFontFamily: theme.fonts.bodyFont,
           stepLabelFontFamily: theme.fonts.bodyFont,
+          // Apply font colors from theme
+          phaseTitleColor: theme.phaseTextColor,
+          phaseSubtitleColor: theme.phaseTextColor,
+          cardTitleColor: theme.cardTitleColor,
+          cardContentColor: theme.cardContentColor,
+          cardSubtextColor: theme.cardSubtextColor,
         },
       };
     }),

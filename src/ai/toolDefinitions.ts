@@ -86,12 +86,17 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'add_step',
-    description: 'Add a new step to a phase. Returns the new step ID.',
+    description: 'Add a new step to a phase with all its properties in one call. Returns the new step ID. Prefer this over add + update for efficiency.',
     input_schema: {
       type: 'object',
       properties: {
         phaseId: { type: 'string', description: 'Phase ID to add the step to' },
         type: { type: 'string', enum: STEP_TYPES_ENUM, description: 'Step type (defaults to standard)' },
+        title: { type: 'string', description: 'Step title' },
+        description: { type: 'string', description: 'Step description' },
+        iconName: { type: 'string', description: 'Lucide icon name in kebab-case (e.g. "check-circle", "users", "zap")' },
+        customLabel: { type: 'string', description: 'Custom badge label text' },
+        data: { type: 'object', description: 'Type-specific data object. Shape depends on step type.' },
       },
       required: ['phaseId'],
     },
@@ -240,15 +245,15 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'add_connector',
-    description: 'Add a visual connector (arrow/line) between two steps.',
+    description: 'Add a visual connector (arrow/line) between two steps. IMPORTANT: Choose handles based on relative positions - source goes TO target, so the arrow points from source toward target. For horizontal workflows (phases left-to-right): if source phase index < target phase index, use sourceHandle="right" and targetHandle="left". If same phase but source step index < target step index, use sourceHandle="bottom" and targetHandle="top". Reverse these if going backwards.',
     input_schema: {
       type: 'object',
       properties: {
-        sourceStepId: { type: 'string' },
-        sourceHandle: { type: 'string', enum: ['top', 'bottom', 'left', 'right'] },
-        targetStepId: { type: 'string' },
-        targetHandle: { type: 'string', enum: ['top', 'bottom', 'left', 'right'] },
-        type: { type: 'string', enum: ['straight', 'curved', 'step', 'loop'], description: 'Defaults to straight' },
+        sourceStepId: { type: 'string', description: 'The step where the connector starts' },
+        sourceHandle: { type: 'string', enum: ['top', 'bottom', 'left', 'right'], description: 'Which side of the source card to connect from' },
+        targetStepId: { type: 'string', description: 'The step where the connector ends (arrow points here)' },
+        targetHandle: { type: 'string', enum: ['top', 'bottom', 'left', 'right'], description: 'Which side of the target card to connect to' },
+        type: { type: 'string', enum: ['straight', 'curved', 'step', 'loop'], description: 'Defaults to step' },
       },
       required: ['sourceStepId', 'sourceHandle', 'targetStepId', 'targetHandle'],
     },
@@ -314,8 +319,8 @@ CAPABILITIES:
 
 RULES:
 1. When creating content, use realistic, professional names and descriptions relevant to the user's domain.
-2. When adding phases and steps, first add the phase, note its returned ID, then add steps to it, then update the steps with meaningful content.
-3. For step types with type-specific data (meeting, checklist, etc.), use update_step with the "data" field after creating the step.
+2. **EFFICIENCY: Use add_step with all parameters (title, description, iconName, data) in a single call instead of add_step + update_step.** Only use update_step when modifying an existing step.
+3. When adding phases and steps: first add the phase, note its returned ID, then add fully-populated steps to it using add_step with all properties.
 4. When the user asks for a "workflow" or "process", think about the logical phases and steps needed.
 5. Always reference existing IDs from the current state when updating or removing elements.
 6. When applying colors, use hex color codes that complement the current theme.

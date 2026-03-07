@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { AppShell } from './components/layout/AppShell';
 import { useInfographicStore } from './store/useInfographicStore';
+import { useThemeStore } from './store/useThemeStore';
 import debounce from 'lodash.debounce';
 
 const BACKEND_URL = '/api/projects';
@@ -8,6 +9,16 @@ const BACKEND_URL = '/api/projects';
 function App() {
   const [loading, setLoading] = useState(true);
   const loadInfographic = useInfographicStore(s => s.loadInfographic);
+  const isDarkMode = useThemeStore(s => s.isDarkMode);
+
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   // Auto-save logic
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -19,7 +30,7 @@ function App() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: data.id,
-            name: data.titleBar?.title || 'Untitled Project',
+            name: data.name || data.titleBar?.text || 'Untitled Project',
             data
           })
         });
@@ -57,7 +68,11 @@ function App() {
   }, [loading, saveToDb]);
 
   if (loading) {
-    return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 text-slate-500">Connecting to database...</div>;
+    return (
+      <div className={`h-screen w-screen flex items-center justify-center transition-colors duration-300 ${isDarkMode ? 'bg-slate-900 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
+        Connecting to database...
+      </div>
+    );
   }
 
   return <AppShell />;
