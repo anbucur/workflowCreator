@@ -50,7 +50,8 @@ export const ConnectorHandle: React.FC<Props> = ({ stepId, position }) => {
                 } ${isSource ? 'ring-2 ring-indigo-400 bg-indigo-500' : 'bg-indigo-400 hover:bg-indigo-500'}`}
             style={positionStyles[position]}
             onClick={handleClick}
-            onMouseDown={(e) => e.stopPropagation()} // prevent card drag
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()} // prevent dnd-kit drag activation
             title={`Connect from ${position}`}
         />
     );

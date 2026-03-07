@@ -130,6 +130,8 @@ export interface BaseStep {
   iconName: string;
   roleIds: string[];
   customLabel?: string;
+  /** 0 = full-width or left card of a side-by-side pair; 1 = right card of a pair (pairs with the step immediately before it) */
+  gridCol?: 0 | 1;
   gridLayout?: {
     x: number;
     y: number;
