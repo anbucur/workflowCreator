@@ -240,7 +240,7 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
 
       {/* Steps grid — always react-grid-layout so all phases support side-by-side dragging */}
       <div
-        className="p-3 pb-6 flex-1 flex flex-col relative"
+        className="p-3 pb-6 flex-1 flex flex-col relative transition-all"
         style={{ background: phaseGradient(phaseTintOpacity / 100) }}
       >
         {/* Pattern overlay */}
@@ -302,7 +302,6 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
           }}
           compactType="vertical"
           isResizable={false}
-          isDroppable={false}
         >
           {phase.steps.map((step) => {
             const gl = step.gridLayout || { x: 0, y: 9999, w: 12, h: 10 };

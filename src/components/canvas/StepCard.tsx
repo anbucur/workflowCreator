@@ -7,6 +7,13 @@ import { ConnectorHandle } from './ConnectorHandle';
 import { STEP_TYPE_LABELS } from '../../types';
 import { getContrastTextColor, getContrastMutedColor, isDarkBackground } from '../../utils/contrast';
 
+// Global drag state for cross-phase card movement (shared with PhaseColumn)
+declare global {
+  interface Window {
+    __draggedStepInfo: { stepId: string; sourcePhaseId: string; step: Step } | null;
+  }
+}
+
 // Dynamically render lucide icons by name
 import * as LucideIcons from 'lucide-react';
 

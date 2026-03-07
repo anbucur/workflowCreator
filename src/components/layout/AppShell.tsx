@@ -93,7 +93,8 @@ export const AppShell: React.FC = () => {
 
             {/* Global Drag to Delete Zone — appears only in bottom third */}
             <div
-                className={`fixed bottom-0 left-0 right-0 pointer-events-none z-50 transition-all duration-200 px-6 pb-6 ${isDraggingCard ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                className={`fixed bottom-0 left-0 pointer-events-none z-50 transition-all duration-200 px-6 pb-6 ${isDraggingCard ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                style={{ right: sidebarOpen ? `${sidebarWidth}px` : '0' }}
             >
                 <div
                     className={`max-w-lg mx-auto w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border-2 border-dashed transition-all duration-200 shadow-sm ${inDeleteZone
@@ -112,7 +113,7 @@ export const AppShell: React.FC = () => {
 
             {wizardOpen && (
                 <ProjectWizard
-                    onComplete={(data, themeId, aiPrompt) => {
+                    onComplete={(data, _themeId, aiPrompt) => {
                         loadInfographic(data);
                         setWizardOpen(false);
                         
