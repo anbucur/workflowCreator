@@ -15,6 +15,7 @@ const STEP_TYPES_ENUM = [
   'standard', 'meeting', 'decision', 'parallel', 'checklist',
   'handoff', 'milestone', 'document', 'estimation', 'collaboration',
   'timeline', 'risk', 'metrics',
+  'kanban', 'okr', 'sprint', 'roadmap', 'executive',
 ];
 
 const THEME_IDS_ENUM = [
@@ -343,8 +344,13 @@ STEP TYPES AND THEIR DATA SCHEMAS:
 - timeline: { entries: [{ id: string, label: string, startDate: string, endDate: string, color: string }] }
 - risk: { severity: 'low'|'medium'|'high'|'critical', risks: [{ id: string, text: string, mitigation?: string }] }
 - metrics: { metrics: [{ id: string, label: string, value: number, target?: number, unit: string, format: 'number'|'progress'|'badge' }] }
+- kanban: { columns: [{ id, title, color, cards: [{ id, title, assignee?, labels: string[], priority: 'low'|'medium'|'high'|'critical' }] }], liveSource?: 'github'|'jira'|'none' }
+- okr: { objectives: [{ id, title, owner?, quarter?, keyResults: [{ id, text, current: number, target: number, unit }] }] }
+- sprint: { sprintName, startDate, endDate, velocityTarget: number, stories: [{ id, title, points: number, status: 'todo'|'in_progress'|'in_review'|'done', assignee?, labels: string[] }], liveSource?: 'jira'|'github'|'none' }
+- roadmap: { quarters: string[], items: [{ id, title, quarter, status: 'planned'|'in_progress'|'completed'|'cancelled', type: 'feature'|'epic'|'initiative'|'release'|'milestone', team?, description?, progress?: number }] }
+- executive: { kpis: [{ id, label, value: string, change?: string, changeType: 'positive'|'negative'|'neutral', trend: 'up'|'down'|'flat', icon?, color? }], summary?: string, deploymentVersion?, deploymentStatus?: 'healthy'|'degraded'|'down'|'unknown' }
 
-Note: When creating items with "id" fields inside data objects (checklist items, tracks, documents, timeline entries, risk items, metrics), use short random strings for IDs (e.g. "a1b2c3").
+Note: When creating items with "id" fields inside data objects (checklist items, tracks, documents, timeline entries, risk items, metrics, kanban cards/columns, OKR objectives/key results, sprint stories, roadmap items, executive KPIs), use short random strings for IDs (e.g. "a1b2c3").
 
 CURRENT WORKFLOW STATE:
 ${JSON.stringify(snapshot, null, 2)}

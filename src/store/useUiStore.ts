@@ -17,6 +17,9 @@ interface UiStore {
   connectMode: boolean;
   connectingFrom: ConnectingFrom | null;
   wizardOpen: boolean;
+  integrationsOpen: boolean;
+  brandKitOpen: boolean;
+  presentationOpen: boolean;
 
   setSelectedElement: (el: SelectedElement) => void;
   setSidebarOpen: (open: boolean) => void;
@@ -29,6 +32,9 @@ interface UiStore {
   setConnectMode: (on: boolean) => void;
   setConnectingFrom: (from: ConnectingFrom | null) => void;
   setWizardOpen: (open: boolean) => void;
+  setIntegrationsOpen: (open: boolean) => void;
+  setBrandKitOpen: (open: boolean) => void;
+  setPresentationOpen: (open: boolean) => void;
 }
 
 export const useUiStore = create<UiStore>((set) => ({
@@ -42,6 +48,9 @@ export const useUiStore = create<UiStore>((set) => ({
   connectMode: false,
   connectingFrom: null,
   wizardOpen: false,
+  integrationsOpen: false,
+  brandKitOpen: false,
+  presentationOpen: false,
 
   setSelectedElement: (el) => set({ selectedElement: el, sidebarOpen: true }),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -54,4 +63,7 @@ export const useUiStore = create<UiStore>((set) => ({
   setConnectMode: (on) => set({ connectMode: on, connectingFrom: on ? null : null }),
   setConnectingFrom: (from) => set({ connectingFrom: from }),
   setWizardOpen: (open) => set({ wizardOpen: open }),
+  setIntegrationsOpen: (open) => set({ integrationsOpen: open }),
+  setBrandKitOpen: (open) => set({ brandKitOpen: open }),
+  setPresentationOpen: (open) => set({ presentationOpen: open }),
 }));

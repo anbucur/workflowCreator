@@ -29,7 +29,7 @@ const isValidName = (name: unknown): name is string =>
 const MAX_DATA_SIZE = 5 * 1024 * 1024; // 5MB max for project data
 
 // ─── AI Tool Definitions & System Prompt ─────────────────────────────
-const STEP_TYPES = ['standard', 'meeting', 'decision', 'parallel', 'checklist', 'handoff', 'milestone', 'document', 'estimation', 'collaboration', 'timeline', 'risk', 'metrics'];
+const STEP_TYPES = ['standard', 'meeting', 'decision', 'parallel', 'checklist', 'handoff', 'milestone', 'document', 'estimation', 'collaboration', 'timeline', 'risk', 'metrics', 'kanban', 'okr', 'sprint', 'roadmap', 'executive'];
 const THEME_IDS = ['ocean-depth', 'sunset-glow', 'forest-canopy', 'corporate-clean', 'monochrome-slate', 'midnight-neon', 'warm-earth', 'berry-blast'];
 
 const AI_TOOL_DEFINITIONS = [
@@ -70,12 +70,13 @@ CRITICAL INSTRUCTIONS:
 
 CAPABILITIES:
 - Create, update, and delete phases (workflow stages/columns)
-- Add, update, and delete steps within phases (13 specialized types)
+- Add, update, and delete steps within phases (18 specialized types including enterprise boards)
 - Manage roles (people/teams) and assign them to steps
 - Apply visual themes (8 predefined themes)
 - Customize layout properties (gaps, fonts, shadows, patterns, colors)
 - Add connectors (visual arrows/lines) between steps
 - Set canvas and title bar properties
+- Create enterprise boards: Kanban, OKR trackers, Sprint boards, Product Roadmaps, Executive Dashboards
 
 RULES:
 1. Use realistic, professional names and descriptions relevant to the user's domain.
@@ -110,6 +111,11 @@ STEP TYPES AND DATA SCHEMAS:
 - timeline: { entries: [{ id, label, startDate, endDate, color }] }
 - risk: { severity: 'low'|'medium'|'high'|'critical', risks: [{ id, text, mitigation? }] }
 - metrics: { metrics: [{ id, label, value: number, target?: number, unit, format: 'number'|'progress'|'badge' }] }
+- kanban: { columns: [{ id, title, color, cards: [{ id, title, assignee?, labels: string[], priority: 'low'|'medium'|'high'|'critical' }] }], liveSource?: 'github'|'jira'|'none' }
+- okr: { objectives: [{ id, title, owner?, quarter?, keyResults: [{ id, text, current: number, target: number, unit }] }] }
+- sprint: { sprintName, startDate, endDate, velocityTarget: number, stories: [{ id, title, points: number, status: 'todo'|'in_progress'|'in_review'|'done', assignee?, labels: string[] }] }
+- roadmap: { quarters: string[], items: [{ id, title, quarter, status: 'planned'|'in_progress'|'completed'|'cancelled', type: 'feature'|'epic'|'initiative'|'release'|'milestone', team?, progress?: number }] }
+- executive: { kpis: [{ id, label, value: string, change?: string, changeType: 'positive'|'negative'|'neutral', trend: 'up'|'down'|'flat', icon?, color? }], summary?, deploymentVersion?, deploymentStatus?: 'healthy'|'degraded'|'down'|'unknown' }
 
 Note: Use short random strings for IDs inside data objects (e.g. "a1b2c3").
 
@@ -227,6 +233,96 @@ const apiPlugin = () => ({
       } catch {
         res.status(500).json({ error: 'Failed to delete project' });
       }
+    });
+
+    // ─── GitHub Integration Proxy ───────────────────────────────────────
+    apiApp.post('/integrations/github/verify', async (req: any, res: any) => {
+      const { token, owner, repo } = req.body;
+      if (!token || !owner || !repo) return res.status(400).json({ error: 'Missing token, owner, or repo' });
+      try {
+        const r = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+        });
+        if (!r.ok) throw new Error(`GitHub: ${r.status} ${r.statusText}`);
+        const data = await r.json() as any;
+        res.json({ ok: true, fullName: data.full_name, private: data.private, defaultBranch: data.default_branch });
+      } catch (e: any) { res.status(400).json({ error: e.message }); }
+    });
+
+    apiApp.get('/integrations/github', async (req: any, res: any) => {
+      const { owner, repo, path } = req.query;
+      const token = req.headers['x-github-token'];
+      if (!token || !owner || !repo || !path) return res.status(400).json({ error: 'Missing params' });
+      try {
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner as string)}/${encodeURIComponent(repo as string)}/${path}`;
+        const r = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+        });
+        if (!r.ok) throw new Error(`GitHub ${r.status}`);
+        res.json(await r.json());
+      } catch (e: any) { res.status(502).json({ error: e.message }); }
+    });
+
+    // ─── Jira Integration Proxy ─────────────────────────────────────────
+    apiApp.post('/integrations/jira/verify', async (req: any, res: any) => {
+      const { domain, email, token, projectKey } = req.body;
+      if (!domain || !email || !token || !projectKey) return res.status(400).json({ error: 'Missing fields' });
+      try {
+        const auth = Buffer.from(`${email}:${token}`).toString('base64');
+        const r = await fetch(`https://${domain}/rest/api/3/project/${encodeURIComponent(projectKey)}`, {
+          headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+        });
+        if (!r.ok) throw new Error(`Jira: ${r.status} ${r.statusText}`);
+        const data = await r.json() as any;
+        res.json({ ok: true, name: data.name, key: data.key });
+      } catch (e: any) { res.status(400).json({ error: e.message }); }
+    });
+
+    apiApp.get('/integrations/jira', async (req: any, res: any) => {
+      const { domain, project, path } = req.query;
+      const email = req.headers['x-jira-email'];
+      const token = req.headers['x-jira-token'];
+      if (!email || !token || !domain || !path) return res.status(400).json({ error: 'Missing params' });
+      const auth = Buffer.from(`${email as string}:${token as string}`).toString('base64');
+      try {
+        if (path === 'sprint/active') {
+          const boardsRes = await fetch(`https://${domain}/rest/agile/1.0/board?projectKeyOrId=${project}`, {
+            headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+          });
+          if (!boardsRes.ok) throw new Error(`Jira boards: ${boardsRes.status}`);
+          const boards = await boardsRes.json() as any;
+          const boardId = boards?.values?.[0]?.id;
+          if (!boardId) { res.json(null); return; }
+          const sprintRes = await fetch(`https://${domain}/rest/agile/1.0/board/${boardId}/sprint?state=active`, {
+            headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+          });
+          if (!sprintRes.ok) throw new Error(`Jira sprint: ${sprintRes.status}`);
+          const sprintData = await sprintRes.json() as any;
+          res.json(sprintData?.values?.[0] || null);
+        } else if (path === 'issues/open') {
+          const issuesRes = await fetch(`https://${domain}/rest/api/3/search?jql=${encodeURIComponent(`project=${project} AND statusCategory != Done ORDER BY updated DESC`)}&maxResults=50`, {
+            headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+          });
+          if (!issuesRes.ok) throw new Error(`Jira issues: ${issuesRes.status}`);
+          const issueData = await issuesRes.json() as any;
+          const issues = (issueData.issues || []).map((i: any) => ({
+            key: i.key,
+            summary: i.fields.summary,
+            status: i.fields.status?.name,
+            priority: i.fields.priority?.name,
+            assignee: i.fields.assignee?.displayName || null,
+            issueType: i.fields.issuetype?.name,
+            url: `https://${domain}/browse/${i.key}`,
+          }));
+          res.json({ issues, done: [] });
+        } else {
+          const r = await fetch(`https://${domain}/rest/api/3/${path}`, {
+            headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+          });
+          if (!r.ok) throw new Error(`Jira ${r.status}`);
+          res.json(await r.json());
+        }
+      } catch (e: any) { res.status(502).json({ error: e.message }); }
     });
 
     // ─── AI Chat Endpoint ───────────────────────────────────────────────
