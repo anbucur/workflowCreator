@@ -21,6 +21,7 @@ interface InfographicStore extends InfographicData {
   updateStep: (phaseId: string, stepId: string, updates: Partial<Step>) => void;
   changeStepType: (phaseId: string, stepId: string, newType: StepType) => void;
   reorderSteps: (fromPhaseId: string, fromIndex: number, toPhaseId: string, toIndex: number) => void;
+  moveStep: (fromPhaseId: string, stepId: string, toPhaseId: string, toIndex: number, placement: 'before' | 'after' | 'left-of' | 'right-of') => void;
 
   // Roles
   addRole: (name: string, color: string) => void;
@@ -140,6 +141,89 @@ export const useInfographicStore = create<InfographicStore>()(
       if (!fromPhase || !toPhase) return {};
       const [moved] = fromPhase.steps.splice(fromIndex, 1);
       toPhase.steps.splice(toIndex, 0, moved);
+      return { phases };
+    }),
+
+    moveStep: (fromPhaseId, stepId, toPhaseId, toIndex, placement) => set((s) => {
+      // Deep-clone phases and steps so we can mutate safely
+      const phases = s.phases.map((p) => ({
+        ...p,
+        steps: p.steps.map((st) => ({ ...st })),
+      }));
+
+      const fromPhase = phases.find((p) => p.id === fromPhaseId);
+      const toPhase = phases.find((p) => p.id === toPhaseId);
+      if (!fromPhase || !toPhase) return {};
+
+      const fromIdx = fromPhase.steps.findIndex((st) => st.id === stepId);
+      if (fromIdx === -1) return {};
+
+      const [moved] = fromPhase.steps.splice(fromIdx, 1);
+
+      // Orphan cleanup: if moved was the left card (col 0) and next step is a right card (col 1),
+      // the right card is now orphaned → make it full-width (col 0)
+      if ((moved.gridCol ?? 0) === 0 && fromPhase.steps[fromIdx]?.gridCol === 1) {
+        fromPhase.steps[fromIdx].gridCol = 0;
+      }
+
+      // Adjust insertion index when operating within the same phase
+      // (removing an element before toIndex shifts everything left by 1)
+      let insertIdx = toIndex;
+      if (fromPhaseId === toPhaseId && fromIdx <= toIndex) {
+        insertIdx = Math.max(0, toIndex - 1);
+      }
+      insertIdx = Math.max(0, Math.min(insertIdx, toPhase.steps.length));
+
+      switch (placement) {
+        case 'before':
+          moved.gridCol = 0;
+          toPhase.steps.splice(insertIdx, 0, moved);
+          break;
+
+        case 'after':
+          moved.gridCol = 0;
+          toPhase.steps.splice(insertIdx + 1, 0, moved);
+          break;
+
+        case 'left-of': {
+          const target = toPhase.steps[insertIdx];
+          const targetIsFullWidth =
+            target &&
+            (target.gridCol ?? 0) === 0 &&
+            toPhase.steps[insertIdx + 1]?.gridCol !== 1;
+
+          if (targetIsFullWidth) {
+            // Pair: moved becomes left (col 0), target becomes right (col 1)
+            moved.gridCol = 0;
+            target.gridCol = 1;
+          } else {
+            // Target is already in a pair or is a right card → just insert full-width before
+            moved.gridCol = 0;
+          }
+          toPhase.steps.splice(insertIdx, 0, moved);
+          break;
+        }
+
+        case 'right-of': {
+          const target = toPhase.steps[insertIdx];
+          const targetIsFullWidth =
+            target &&
+            (target.gridCol ?? 0) === 0 &&
+            toPhase.steps[insertIdx + 1]?.gridCol !== 1;
+
+          if (targetIsFullWidth) {
+            // Pair: target stays left (col 0), moved becomes right (col 1)
+            target.gridCol = 0;
+            moved.gridCol = 1;
+          } else {
+            // Target already has a pair → insert moved as full-width after
+            moved.gridCol = 0;
+          }
+          toPhase.steps.splice(insertIdx + 1, 0, moved);
+          break;
+        }
+      }
+
       return { phases };
     }),
 
