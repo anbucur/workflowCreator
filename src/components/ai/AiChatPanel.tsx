@@ -4,10 +4,10 @@ import { useUiStore } from '../../store/useUiStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
-import { Bot, ChevronRight, Eraser, Sparkles, AlertCircle } from 'lucide-react';
+import { Bot, ChevronRight, Eraser, Sparkles, AlertCircle, Square } from 'lucide-react';
 
 export const AiChatPanel: React.FC = () => {
-    const { messages, isStreaming, error, sendMessage, clearHistory, selectedModel, setSelectedModel } = useAiChatStore();
+    const { messages, isStreaming, error, sendMessage, stopGeneration, clearHistory, selectedModel, setSelectedModel } = useAiChatStore();
     const aiPanelOpen = useUiStore((s) => s.aiPanelOpen);
     const setAiPanelOpen = useUiStore((s) => s.setAiPanelOpen);
     const isDarkMode = useThemeStore((s) => s.isDarkMode);
@@ -125,7 +125,17 @@ export const AiChatPanel: React.FC = () => {
             )}
 
             <div className={`p-4 border-t shrink-0 transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-                <ChatInput onSend={sendMessage} disabled={isStreaming} />
+                {isStreaming ? (
+                    <button
+                        onClick={stopGeneration}
+                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-colors ${isDarkMode ? 'bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-800' : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'}`}
+                    >
+                        <Square size={14} className="fill-current" />
+                        Stop Generating
+                    </button>
+                ) : (
+                    <ChatInput onSend={sendMessage} disabled={isStreaming} />
+                )}
                 <div className={`mt-2 text-[11px] text-center font-medium tracking-wide transition-colors duration-300 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                     AI uses {selectedModel === 'zai' ? 'z.ai' : selectedModel === 'k2p5' ? 'Kimi' : 'Claude Sonnet 3.5'}. Press Ctrl+Z to undo changes.
                 </div>

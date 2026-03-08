@@ -31,6 +31,16 @@ export function executeTool(
         store.addPhase();
         const afterPhases = useInfographicStore.getState().phases;
         const newPhase = afterPhases.find(p => !beforeIds.includes(p.id));
+
+        // If additional properties are provided, update the phase in the same call
+        if (newPhase && (toolInput.title || toolInput.subtitle || toolInput.backgroundColor || toolInput.textColor)) {
+          const updates: Record<string, unknown> = {};
+          for (const key of ['title', 'subtitle', 'backgroundColor', 'textColor']) {
+            if (toolInput[key] !== undefined) updates[key] = toolInput[key];
+          }
+          useInfographicStore.getState().updatePhase(newPhase.id, updates);
+        }
+
         result = { success: true, phaseId: newPhase?.id, message: `Phase created with ID ${newPhase?.id}` };
         break;
       }
@@ -68,9 +78,9 @@ export function executeTool(
         const newStep = afterPhase?.steps.find(s => !beforeStepIds.includes(s.id));
 
         // If additional properties are provided, update the step in the same call
-        if (newStep && (toolInput.title || toolInput.description || toolInput.iconName || toolInput.customLabel || toolInput.data)) {
+        if (newStep && (toolInput.title || toolInput.description || toolInput.iconName || toolInput.customLabel || toolInput.roleIds || toolInput.data)) {
           const updates: Record<string, unknown> = {};
-          for (const key of ['title', 'description', 'iconName', 'customLabel', 'data']) {
+          for (const key of ['title', 'description', 'iconName', 'customLabel', 'roleIds', 'data']) {
             if (toolInput[key] !== undefined) updates[key] = toolInput[key];
           }
           useInfographicStore.getState().updateStep(phaseId, newStep.id, updates as any);
@@ -118,6 +128,16 @@ export function executeTool(
         store.addRole(toolInput.name as string, toolInput.color as string);
         const afterRoles = useInfographicStore.getState().roles;
         const newRole = afterRoles.find(r => !beforeRoleIds.includes(r.id));
+
+        // If additional properties are provided, update the role in the same call
+        if (newRole && (toolInput.textColor || toolInput.tag)) {
+          const updates: Record<string, unknown> = {};
+          for (const key of ['textColor', 'tag']) {
+            if (toolInput[key] !== undefined) updates[key] = toolInput[key];
+          }
+          useInfographicStore.getState().updateRole(newRole.id, updates);
+        }
+
         result = { success: true, roleId: newRole?.id, message: `Role created with ID ${newRole?.id}` };
         break;
       }
@@ -176,6 +196,16 @@ export function executeTool(
         // Find the new connector
         const connectors = useInfographicStore.getState().connectors;
         const newConn = connectors[connectors.length - 1];
+
+        // If additional styling properties are provided, update the connector in the same call
+        if (newConn && (toolInput.color || toolInput.label || toolInput.lineStyle || toolInput.sourceHead || toolInput.targetHead || toolInput.strokeWidth)) {
+          const updates: Record<string, unknown> = {};
+          for (const key of ['color', 'label', 'lineStyle', 'sourceHead', 'targetHead', 'strokeWidth']) {
+            if (toolInput[key] !== undefined) updates[key] = toolInput[key];
+          }
+          useInfographicStore.getState().updateConnector(newConn.id, updates as any);
+        }
+
         result = { success: true, connectorId: newConn?.id };
         break;
       }

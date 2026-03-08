@@ -90,11 +90,15 @@ interface AiChatStore {
   error: string | null;
 
   sendMessage: (text: string) => Promise<void>;
+  stopGeneration: () => void;
   clearHistory: () => void;
   setError: (error: string | null) => void;
   selectedModel: string;
   setSelectedModel: (model: string) => void;
 }
+
+// Global AbortController for cancelling ongoing requests
+let currentAbortController: AbortController | null = null;
 
 export const useAiChatStore = create<AiChatStore>((set, get) => ({
   messages: [],
@@ -107,6 +111,15 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   setSelectedModel: (model) => set({ selectedModel: model }),
 
   clearHistory: () => set({ messages: [], apiMessages: [], error: null }),
+
+  stopGeneration: () => {
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+      set({ isStreaming: false });
+      console.log('[AI Chat] Generation stopped by user');
+    }
+  },
 
   sendMessage: async (text: string) => {
     const { apiMessages } = get();
@@ -137,6 +150,10 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     let currentApiMessages = newApiMessages;
     let continueLoop = true;
 
+    // Create new AbortController for this request
+    currentAbortController = new AbortController();
+    const signal = currentAbortController.signal;
+
     while (continueLoop) {
       continueLoop = false;
 
@@ -148,7 +165,13 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages: currentApiMessages, snapshot, model: get().selectedModel }),
+          signal, // Add abort signal
         });
+
+        // Check if request was aborted
+        if (signal.aborted) {
+          return;
+        }
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({ error: 'Request failed' }));
@@ -258,6 +281,11 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
           continueLoop = true;
         }
       } catch (err: unknown) {
+        // Don't show error if request was aborted by user
+        if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) {
+          console.log('[AI Chat] Request aborted');
+          return;
+        }
         const message = err instanceof Error ? err.message : 'Network error';
         set({ isStreaming: false, error: message });
         return;

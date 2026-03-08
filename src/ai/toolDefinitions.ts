@@ -44,8 +44,16 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'add_phase',
-    description: 'Add a new empty phase to the workflow. Returns the new phase ID.',
-    input_schema: { type: 'object', properties: {} },
+    description: 'Add a new phase to the workflow with all its properties in one call. Returns the new phase ID. Prefer this over add + update for efficiency.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Phase title (e.g. "Discovery", "Development")' },
+        subtitle: { type: 'string', description: 'Phase subtitle/description' },
+        backgroundColor: { type: 'string', description: 'Phase background color (hex, e.g. "#3b82f6")' },
+        textColor: { type: 'string', description: 'Phase text color (hex)' },
+      },
+    },
   },
   {
     name: 'remove_phase',
@@ -97,6 +105,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
         description: { type: 'string', description: 'Step description' },
         iconName: { type: 'string', description: 'Lucide icon name in kebab-case (e.g. "check-circle", "users", "zap")' },
         customLabel: { type: 'string', description: 'Custom badge label text' },
+        roleIds: { type: 'array', items: { type: 'string' }, description: 'Array of role IDs to assign to this step' },
         data: { type: 'object', description: 'Type-specific data object. Shape depends on step type.' },
       },
       required: ['phaseId'],
@@ -160,12 +169,14 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'add_role',
-    description: 'Add a new role (team member/actor). Returns the new role ID.',
+    description: 'Add a new role (team member/actor) with all properties in one call. Returns the new role ID.',
     input_schema: {
       type: 'object',
       properties: {
         name: { type: 'string', description: 'Role name (e.g. "Developer", "QA Lead")' },
         color: { type: 'string', description: 'Badge background color (hex)' },
+        textColor: { type: 'string', description: 'Badge text color (hex)' },
+        tag: { type: 'string', description: 'Short abbreviation for the role (e.g. "DEV", "QA")' },
       },
       required: ['name', 'color'],
     },
@@ -246,7 +257,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'add_connector',
-    description: 'Add a visual connector (arrow/line) between two steps. IMPORTANT: Choose handles based on relative positions - source goes TO target, so the arrow points from source toward target. For horizontal workflows (phases left-to-right): if source phase index < target phase index, use sourceHandle="right" and targetHandle="left". If same phase but source step index < target step index, use sourceHandle="bottom" and targetHandle="top". Reverse these if going backwards.',
+    description: 'Add a visual connector (arrow/line) between two steps with all styling properties in one call. Returns the new connector ID. IMPORTANT: Choose handles based on relative positions - source goes TO target, so the arrow points from source toward target. For horizontal workflows (phases left-to-right): if source phase index < target phase index, use sourceHandle="right" and targetHandle="left". If same phase but source step index < target step index, use sourceHandle="bottom" and targetHandle="top". Reverse these if going backwards.',
     input_schema: {
       type: 'object',
       properties: {
@@ -254,7 +265,13 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
         sourceHandle: { type: 'string', enum: ['top', 'bottom', 'left', 'right'], description: 'Which side of the source card to connect from' },
         targetStepId: { type: 'string', description: 'The step where the connector ends (arrow points here)' },
         targetHandle: { type: 'string', enum: ['top', 'bottom', 'left', 'right'], description: 'Which side of the target card to connect to' },
-        type: { type: 'string', enum: ['straight', 'curved', 'step', 'loop'], description: 'Defaults to step' },
+        type: { type: 'string', enum: ['straight', 'curved', 'step', 'loop'], description: 'Connector path type (defaults to step)' },
+        color: { type: 'string', description: 'Connector color (hex)' },
+        label: { type: 'string', description: 'Text label to display on the connector' },
+        lineStyle: { type: 'string', enum: ['solid', 'dashed', 'dotted'], description: 'Line style (defaults to solid)' },
+        sourceHead: { type: 'string', enum: ['none', 'arrow', 'diamond', 'circle', 'square'], description: 'Arrow head at source end (defaults to none)' },
+        targetHead: { type: 'string', enum: ['none', 'arrow', 'diamond', 'circle', 'square'], description: 'Arrow head at target end (defaults to arrow)' },
+        strokeWidth: { type: 'number', description: 'Line width in pixels' },
       },
       required: ['sourceStepId', 'sourceHandle', 'targetStepId', 'targetHandle'],
     },
