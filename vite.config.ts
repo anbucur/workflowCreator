@@ -15,19 +15,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const dbPath = join(__dirname, 'workflow.sqlite');
 
-function isValidJiraDomain(domain: string): boolean {
-  if (!domain) return false;
-  const trimmed = domain.trim();
-  // Basic length and character checks
-  if (trimmed.length === 0 || trimmed.length > 253) return false;
-  if (!/^[a-zA-Z0-9.-]+$/.test(trimmed)) return false;
-  const lower = trimmed.toLowerCase();
-  // Restrict to Jira Cloud domains
-  if (!lower.endsWith('.atlassian.net')) return false;
-  // Prevent leading dot or empty labels
-  if (lower.startsWith('.') || lower.includes('..')) return false;
-  return true;
-}
 
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
@@ -252,38 +239,21 @@ const apiPlugin = () => ({
     const isSafeJiraDomain = (domain: string): boolean => {
       if (!domain) return false;
       const trimmed = domain.trim();
-      // Disallow protocol prefixes and path characters
       if (trimmed.includes('://') || trimmed.includes('/') || trimmed.includes('\\')) {
         return false;
       }
       try {
         const url = new URL(`https://${trimmed}`);
         const host = url.hostname.toLowerCase();
-        // Disallow localhost-style hosts
         if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
           return false;
         }
-        // Disallow obvious private IPv4 ranges and link-local
         if (/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)/.test(host)) {
           return false;
         }
         return true;
-        const pathStr = String(path);
-        // Basic validation to prevent traversal and malformed paths
-        if (
-          pathStr.startsWith('/') ||          // disallow absolute paths
-          pathStr.includes('..') ||           // disallow traversal
-          pathStr.includes('\\') ||           // disallow backslashes
-          !/^[A-Za-z0-9._\-\/]+$/.test(pathStr) // allow only safe characters
-        ) {
-          return res.status(400).json({ error: 'Invalid path' });
-        }
-        const baseUrl = `https://api.github.com/repos/${encodeURIComponent(owner as string)}/${encodeURIComponent(repo as string)}`;
-        const url = `${baseUrl}/${pathStr}`;
+      } catch {
         return false;
-      if (!isValidJiraDomain(domain)) {
-        return res.status(400).json({ error: 'Invalid Jira domain' });
-      }
       }
     };
 
@@ -300,16 +270,17 @@ const apiPlugin = () => ({
         res.json({ ok: true, fullName: data.full_name, private: data.private, defaultBranch: data.default_branch });
       } catch (e: any) { res.status(400).json({ error: e.message }); }
     });
-      if (!isValidJiraDomain(domain as string)) {
-        return res.status(400).json({ error: 'Invalid Jira domain' });
-      }
 
     apiApp.get('/integrations/github', async (req: any, res: any) => {
       const { owner, repo, path } = req.query;
       const token = req.headers['x-github-token'];
       if (!token || !owner || !repo || !path) return res.status(400).json({ error: 'Missing params' });
+      const pathStr = String(path);
+      if (pathStr.startsWith('/') || pathStr.includes('..') || pathStr.includes('\\') || !/^[A-Za-z0-9._\-\/]+$/.test(pathStr)) {
+        return res.status(400).json({ error: 'Invalid path' });
+      }
       try {
-        const url = `https://api.github.com/repos/${encodeURIComponent(owner as string)}/${encodeURIComponent(repo as string)}/${path}`;
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner as string)}/${encodeURIComponent(repo as string)}/${pathStr}`;
         const r = await fetch(url, {
           headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
         });
