@@ -235,6 +235,30 @@ const apiPlugin = () => ({
       }
     });
 
+    const isSafeJiraDomain = (domain: string): boolean => {
+      if (!domain) return false;
+      const trimmed = domain.trim();
+      // Disallow protocol prefixes and path characters
+      if (trimmed.includes('://') || trimmed.includes('/') || trimmed.includes('\\')) {
+        return false;
+      }
+      try {
+        const url = new URL(`https://${trimmed}`);
+        const host = url.hostname.toLowerCase();
+        // Disallow localhost-style hosts
+        if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+          return false;
+        }
+        // Disallow obvious private IPv4 ranges and link-local
+        if (/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)/.test(host)) {
+          return false;
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
     // ─── GitHub Integration Proxy ───────────────────────────────────────
     apiApp.post('/integrations/github/verify', async (req: any, res: any) => {
       const { token, owner, repo } = req.body;
@@ -267,6 +291,9 @@ const apiPlugin = () => ({
     apiApp.post('/integrations/jira/verify', async (req: any, res: any) => {
       const { domain, email, token, projectKey } = req.body;
       if (!domain || !email || !token || !projectKey) return res.status(400).json({ error: 'Missing fields' });
+      if (!isSafeJiraDomain(domain)) {
+        return res.status(400).json({ error: 'Invalid Jira domain' });
+      }
       try {
         const auth = Buffer.from(`${email}:${token}`).toString('base64');
         const r = await fetch(`https://${domain}/rest/api/3/project/${encodeURIComponent(projectKey)}`, {
