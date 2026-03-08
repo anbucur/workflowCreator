@@ -254,7 +254,18 @@ const apiPlugin = () => ({
           return false;
         }
         return true;
-      } catch {
+        const pathStr = String(path);
+        // Basic validation to prevent traversal and malformed paths
+        if (
+          pathStr.startsWith('/') ||          // disallow absolute paths
+          pathStr.includes('..') ||           // disallow traversal
+          pathStr.includes('\\') ||           // disallow backslashes
+          !/^[A-Za-z0-9._\-\/]+$/.test(pathStr) // allow only safe characters
+        ) {
+          return res.status(400).json({ error: 'Invalid path' });
+        }
+        const baseUrl = `https://api.github.com/repos/${encodeURIComponent(owner as string)}/${encodeURIComponent(repo as string)}`;
+        const url = `${baseUrl}/${pathStr}`;
         return false;
       }
     };
