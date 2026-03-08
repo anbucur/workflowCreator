@@ -15,6 +15,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const dbPath = join(__dirname, 'workflow.sqlite');
 
+function isValidJiraDomain(domain: string): boolean {
+  if (!domain) return false;
+  const trimmed = domain.trim();
+  // Basic length and character checks
+  if (trimmed.length === 0 || trimmed.length > 253) return false;
+  if (!/^[a-zA-Z0-9.-]+$/.test(trimmed)) return false;
+  const lower = trimmed.toLowerCase();
+  // Restrict to Jira Cloud domains
+  if (!lower.endsWith('.atlassian.net')) return false;
+  // Prevent leading dot or empty labels
+  if (lower.startsWith('.') || lower.includes('..')) return false;
+  return true;
+}
+
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.exec(`CREATE TABLE IF NOT EXISTS workflows (id TEXT PRIMARY KEY, data TEXT)`);
@@ -267,6 +281,9 @@ const apiPlugin = () => ({
         const baseUrl = `https://api.github.com/repos/${encodeURIComponent(owner as string)}/${encodeURIComponent(repo as string)}`;
         const url = `${baseUrl}/${pathStr}`;
         return false;
+      if (!isValidJiraDomain(domain)) {
+        return res.status(400).json({ error: 'Invalid Jira domain' });
+      }
       }
     };
 
@@ -283,6 +300,9 @@ const apiPlugin = () => ({
         res.json({ ok: true, fullName: data.full_name, private: data.private, defaultBranch: data.default_branch });
       } catch (e: any) { res.status(400).json({ error: e.message }); }
     });
+      if (!isValidJiraDomain(domain as string)) {
+        return res.status(400).json({ error: 'Invalid Jira domain' });
+      }
 
     apiApp.get('/integrations/github', async (req: any, res: any) => {
       const { owner, repo, path } = req.query;
