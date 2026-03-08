@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable, Plus, Bot, Moon, Sun } from 'lucide-react';
+import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable, Plus, Bot, Moon, Sun, Wifi, Palette, CheckCircle } from 'lucide-react';
+import { useIntegrationsStore } from '../../store/useIntegrationsStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useExportStore } from '../../store/useExportStore';
 import { useStore } from 'zustand';
@@ -20,9 +21,15 @@ export const Toolbar: React.FC = () => {
     const connectMode = useUiStore((s) => s.connectMode);
     const setConnectMode = useUiStore((s) => s.setConnectMode);
     const setWizardOpen = useUiStore((s) => s.setWizardOpen);
+    const setIntegrationsOpen = useUiStore((s) => s.setIntegrationsOpen);
+    const setBrandKitOpen = useUiStore((s) => s.setBrandKitOpen);
+    const setPresentationOpen = useUiStore((s) => s.setPresentationOpen);
     const projectName = useInfographicStore((s) => s.name) || '';
     const setProjectName = useInfographicStore((s) => s.setProjectName);
     const { isDarkMode, toggleDarkMode } = useThemeStore();
+    const { isConnected } = useIntegrationsStore();
+    const ghConnected = isConnected('github');
+    const jiraConnected = isConnected('jira');
 
     // Close dropdown on outside click
     React.useEffect(() => {
@@ -152,6 +159,41 @@ export const Toolbar: React.FC = () => {
                 >
                     <Bot size={16} className={useUiStore.getState().aiPanelOpen ? (isDarkMode ? 'text-purple-400' : 'text-purple-500') : (isDarkMode ? 'text-slate-400' : 'text-slate-500')} />
                     AI
+                </button>
+
+                <div className={`w-px h-4 mx-2 transition-colors duration-300 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
+
+                {/* Brand Kit */}
+                <button
+                    onClick={() => setBrandKitOpen(true)}
+                    className={`p-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-pink-900/30 hover:border-pink-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-pink-50 hover:border-pink-200'}`}
+                    title="Brand Kit — Apply company branding"
+                >
+                    <Palette size={16} className={isDarkMode ? 'text-pink-400' : 'text-pink-500'} />
+                    Brand
+                </button>
+
+                {/* Integrations */}
+                <button
+                    onClick={() => setIntegrationsOpen(true)}
+                    className={`p-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider border relative ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-teal-900/30 hover:border-teal-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-teal-50 hover:border-teal-200'}`}
+                    title="Integrations — Connect GitHub, Jira"
+                >
+                    <Wifi size={16} className={ghConnected || jiraConnected ? 'text-green-500' : isDarkMode ? 'text-slate-400' : 'text-slate-500'} />
+                    Integrations
+                    {(ghConnected || jiraConnected) && (
+                        <CheckCircle size={10} className="absolute -top-1 -right-1 text-green-500 bg-white rounded-full" />
+                    )}
+                </button>
+
+                {/* Presentation Mode */}
+                <button
+                    onClick={() => setPresentationOpen(true)}
+                    className={`p-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-indigo-900/30 hover:border-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-indigo-50 hover:border-indigo-200'}`}
+                    title="Presentation Mode — Present as slide deck"
+                >
+                    <MonitorPlay size={16} className={isDarkMode ? 'text-indigo-400' : 'text-indigo-500'} />
+                    Present
                 </button>
 
                 <div className={`w-px h-4 mx-2 transition-colors duration-300 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />

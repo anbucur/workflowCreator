@@ -119,9 +119,118 @@ export interface MetricsData {
   metrics: MetricItem[];
 }
 
+// ─── New enterprise board step types ─────────────────────────────────────────
+
+export interface KanbanCard {
+  id: string;
+  title: string;
+  assignee?: string;
+  labels: string[];
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  source?: 'github' | 'jira' | 'manual'; // live integration source
+  sourceId?: string; // GitHub issue# or Jira key
+}
+
+export interface KanbanColumn {
+  id: string;
+  title: string;
+  color: string;
+  cards: KanbanCard[];
+}
+
+export interface KanbanData {
+  columns: KanbanColumn[];
+  liveSource?: 'github' | 'jira' | 'none';
+}
+
+export interface OKRKeyResult {
+  id: string;
+  text: string;
+  current: number;
+  target: number;
+  unit: string;
+}
+
+export interface OKRObjective {
+  id: string;
+  title: string;
+  owner?: string;
+  quarter?: string;
+  keyResults: OKRKeyResult[];
+}
+
+export interface OKRData {
+  objectives: OKRObjective[];
+}
+
+export type SprintStoryStatus = 'todo' | 'in_progress' | 'in_review' | 'done';
+
+export interface SprintStory {
+  id: string;
+  title: string;
+  points: number;
+  status: SprintStoryStatus;
+  assignee?: string;
+  labels: string[];
+  sourceId?: string; // Jira key or GitHub issue#
+}
+
+export interface SprintData {
+  sprintName: string;
+  startDate: string;
+  endDate: string;
+  velocityTarget: number;
+  stories: SprintStory[];
+  liveSource?: 'jira' | 'github' | 'none';
+}
+
+export type RoadmapItemStatus = 'planned' | 'in_progress' | 'completed' | 'cancelled';
+export type RoadmapItemType = 'feature' | 'epic' | 'initiative' | 'release' | 'milestone';
+
+export interface RoadmapItem {
+  id: string;
+  title: string;
+  quarter: string; // e.g. "Q1 2025"
+  status: RoadmapItemStatus;
+  type: RoadmapItemType;
+  team?: string;
+  description?: string;
+  progress?: number; // 0-100
+}
+
+export interface RoadmapData {
+  items: RoadmapItem[];
+  quarters: string[]; // ordered list of quarter labels to display
+}
+
+export type KPITrend = 'up' | 'down' | 'flat';
+export type KPIChangeType = 'positive' | 'negative' | 'neutral';
+
+export interface ExecutiveKPI {
+  id: string;
+  label: string;
+  value: string;
+  change?: string; // e.g. "+12%"
+  changeType: KPIChangeType;
+  trend: KPITrend;
+  icon?: string;
+  color?: string;
+  liveSource?: 'github' | 'jira' | 'manual';
+  liveMetric?: string; // e.g. "open_issues", "velocity", "release_count"
+}
+
+export interface ExecutiveData {
+  kpis: ExecutiveKPI[];
+  summary?: string;
+  deploymentVersion?: string;
+  deploymentStatus?: 'healthy' | 'degraded' | 'down' | 'unknown';
+  liveRefresh?: boolean;
+}
+
 export type StepType = 'standard' | 'meeting' | 'decision' | 'parallel' | 'checklist' |
   'handoff' | 'milestone' | 'document' | 'estimation' | 'collaboration' |
-  'timeline' | 'risk' | 'metrics';
+  'timeline' | 'risk' | 'metrics' |
+  'kanban' | 'okr' | 'sprint' | 'roadmap' | 'executive';
 
 export interface BaseStep {
   id: string;
@@ -154,6 +263,11 @@ export type Step = BaseStep & (
   | { type: 'timeline'; data: TimelineData }
   | { type: 'risk'; data: RiskData }
   | { type: 'metrics'; data: MetricsData }
+  | { type: 'kanban'; data: KanbanData }
+  | { type: 'okr'; data: OKRData }
+  | { type: 'sprint'; data: SprintData }
+  | { type: 'roadmap'; data: RoadmapData }
+  | { type: 'executive'; data: ExecutiveData }
 );
 
 export interface Phase {
@@ -291,6 +405,11 @@ export const STEP_TYPE_LABELS: Record<StepType, string> = {
   timeline: 'Timeline',
   risk: 'Risk / Warning',
   metrics: 'Metrics / KPI',
+  kanban: 'Kanban Board',
+  okr: 'OKR Tracker',
+  sprint: 'Sprint Board',
+  roadmap: 'Roadmap',
+  executive: 'Executive Dashboard',
 };
 
 export const STEP_TYPE_ICONS: Record<StepType, string> = {
@@ -307,4 +426,9 @@ export const STEP_TYPE_ICONS: Record<StepType, string> = {
   timeline: 'gantt-chart',
   risk: 'alert-triangle',
   metrics: 'bar-chart-3',
+  kanban: 'kanban',
+  okr: 'target',
+  sprint: 'zap',
+  roadmap: 'map',
+  executive: 'layout-dashboard',
 };

@@ -13,6 +13,11 @@ import { CollaborationContent } from './CollaborationContent';
 import { TimelineContent } from './TimelineContent';
 import { RiskContent } from './RiskContent';
 import { MetricsContent } from './MetricsContent';
+import { KanbanContent } from './KanbanContent';
+import { OKRContent } from './OKRContent';
+import { SprintContent } from './SprintContent';
+import { RoadmapContent } from './RoadmapContent';
+import { ExecutiveContent } from './ExecutiveContent';
 
 interface StepContentProps {
   step: Step;
@@ -33,6 +38,11 @@ export const StepContentRouter: React.FC<StepContentProps> = ({ step, roles }) =
     case 'timeline': return <TimelineContent step={step} roles={roles} />;
     case 'risk': return <RiskContent step={step} roles={roles} />;
     case 'metrics': return <MetricsContent step={step} roles={roles} />;
+    case 'kanban': return <KanbanContent step={step} roles={roles} />;
+    case 'okr': return <OKRContent step={step} roles={roles} />;
+    case 'sprint': return <SprintContent step={step} roles={roles} />;
+    case 'roadmap': return <RoadmapContent step={step} roles={roles} />;
+    case 'executive': return <ExecutiveContent step={step} roles={roles} />;
     case 'standard':
     default: return <StandardContent step={step} roles={roles} />;
   }

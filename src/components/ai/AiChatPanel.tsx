@@ -23,9 +23,10 @@ export const AiChatPanel: React.FC = () => {
 
     const examplePrompts = [
         "Create a software development workflow with 4 phases",
-        "Change all step colors to match their phases",
-        "Add a QA role and assign it to all testing steps",
-        "Apply the monochrome-slate theme",
+        "Build an executive dashboard with KPIs and deployment status",
+        "Create a product roadmap with Q1-Q4 items for 2025",
+        "Add a sprint board for the current development cycle",
+        "Create an OKR tracker for Q1 company goals",
     ];
 
     return (

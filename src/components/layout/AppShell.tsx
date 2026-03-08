@@ -5,6 +5,9 @@ import { Canvas } from './Canvas';
 import { ExportPreviewModal } from '../export/ExportPreviewModal';
 import { ProjectWizard } from '../wizard/ProjectWizard';
 import { AiChatPanel } from '../ai/AiChatPanel';
+import { IntegrationsModal } from '../integrations/IntegrationsModal';
+import { BrandKitModal } from '../branding/BrandKitModal';
+import { PresentationMode } from '../presentation/PresentationMode';
 import { useUiStore } from '../../store/useUiStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useThemeStore } from '../../store/useThemeStore';
@@ -16,6 +19,12 @@ export const AppShell: React.FC = () => {
     const isDraggingCard = useUiStore((state) => state.isDraggingCard);
     const wizardOpen = useUiStore((state) => state.wizardOpen);
     const setWizardOpen = useUiStore((state) => state.setWizardOpen);
+    const integrationsOpen = useUiStore((state) => state.integrationsOpen);
+    const setIntegrationsOpen = useUiStore((state) => state.setIntegrationsOpen);
+    const brandKitOpen = useUiStore((state) => state.brandKitOpen);
+    const setBrandKitOpen = useUiStore((state) => state.setBrandKitOpen);
+    const presentationOpen = useUiStore((state) => state.presentationOpen);
+    const setPresentationOpen = useUiStore((state) => state.setPresentationOpen);
     const loadInfographic = useInfographicStore((s) => s.loadInfographic);
     const [inDeleteZone, setInDeleteZone] = React.useState(false);
 
@@ -116,7 +125,7 @@ export const AppShell: React.FC = () => {
                     onComplete={(data, _themeId, aiPrompt) => {
                         loadInfographic(data);
                         setWizardOpen(false);
-                        
+
                         // If AI prompt was provided, open AI panel and send the message
                         if (aiPrompt) {
                             const { setAiPanelOpen } = useUiStore.getState();
@@ -130,6 +139,18 @@ export const AppShell: React.FC = () => {
                     }}
                     onClose={() => setWizardOpen(false)}
                 />
+            )}
+
+            {integrationsOpen && (
+                <IntegrationsModal onClose={() => setIntegrationsOpen(false)} />
+            )}
+
+            {brandKitOpen && (
+                <BrandKitModal onClose={() => setBrandKitOpen(false)} />
+            )}
+
+            {presentationOpen && (
+                <PresentationMode onClose={() => setPresentationOpen(false)} />
             )}
         </div>
     );
