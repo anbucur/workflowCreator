@@ -1,22 +1,10 @@
-
 import React from 'react';
-import type { Phase, RoleDefinition } from '../../types';
+import type { Phase, RoleDefinition, Step } from '../../types';
 import { useInfographicStore } from '../../store/useInfographicStore';
-import { WidthProvider, ReactGridLayout } from 'react-grid-layout/legacy';
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
+import { useDroppable } from '@dnd-kit/core';
 import { useUiStore } from '../../store/useUiStore';
-import { StepCard } from './StepCard';
+import { DraggableStepCard } from './DraggableStepCard';
 import { Plus } from 'lucide-react';
-
-const GridLayout = WidthProvider(ReactGridLayout);
-
-// Fine-grained grid: 8px rows, dynamic margins → slots fit content tightly
-const ROW_HEIGHT = 8;
-
-function pxToH(px: number, gap: number): number {
-  return Math.max(1, Math.ceil((px + gap) / (ROW_HEIGHT + gap)));
-}
 
 /** Linearly interpolate a hex colour toward white. ratio=0 → white, ratio=1 → full hex colour. */
 function hexMix(hex: string, ratio: number): string {
@@ -28,10 +16,6 @@ function hexMix(hex: string, ratio: number): string {
   return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
 }
 
-/**
- * Blend two RGB/hex colour strings at ratio t (0=a, 1=b).
- * Works on 'rgb(...)' strings returned by hexMix as well as '#rrggbb'.
- */
 function rgbBlend(a: string, b: string, t: number): string {
   const parse = (s: string): [number, number, number] => {
     const m = s.match(/\d+/g) ?? ['255', '255', '255'];
@@ -42,66 +26,31 @@ function rgbBlend(a: string, b: string, t: number): string {
   return `rgb(${Math.round(r1 + (r2 - r1) * t)},${Math.round(g1 + (g2 - g1) * t)},${Math.round(b1 + (b2 - b1) * t)})`;
 }
 
-interface CardWrapperProps {
-  step: Phase['steps'][number];
-  phaseId: string;
-  roles: RoleDefinition[];
-  cornerRadius: number;
-  stepGap: number;
-  cardBackground?: string;
-  phaseColor?: string;
+/** Group flat steps array into rows for 2-column rendering.
+ *  A step with gridCol === 1 is always paired with the step immediately before it. */
+export function groupStepsIntoRows(steps: Step[]): Array<{ left: Step; right?: Step }> {
+  const rows: Array<{ left: Step; right?: Step }> = [];
+  let i = 0;
+  while (i < steps.length) {
+    const left = steps[i];
+    const next = steps[i + 1];
+    if (next?.gridCol === 1) {
+      rows.push({ left, right: next });
+      i += 2;
+    } else {
+      rows.push({ left });
+      i++;
+    }
+  }
+  return rows;
 }
 
-/**
- * Wraps a StepCard and uses ResizeObserver to keep the grid slot h tightly
- * matched to actual rendered card height — eliminating empty space at the bottom.
- */
-const CardWrapper: React.FC<CardWrapperProps> = ({ step, phaseId, roles, cornerRadius, stepGap, cardBackground, phaseColor }) => {
-  const ref = React.useRef<HTMLDivElement>(null);
-  const stepRef = React.useRef(step);
-  // Track last-sent h via ref to prevent rapid-fire store updates
-  const sentH = React.useRef<number>(step.gridLayout?.h ?? 10);
-
-  React.useEffect(() => {
-    stepRef.current = step;
-  }, [step]);
-
-  React.useEffect(() => {
-    sentH.current = step.gridLayout?.h ?? 10;
-  }, [step.gridLayout?.h]);
-
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const observer = new ResizeObserver((entries) => {
-      const measured = entries[0].contentRect.height;
-      if (measured < 10) return; // skip tiny/initial measurements
-      const newH = pxToH(measured, stepGap);
-      if (newH !== sentH.current) {
-        sentH.current = newH; // optimistic update — prevents duplicate writes
-        const currentStep = stepRef.current;
-        useInfographicStore.getState().updateStep(phaseId, currentStep.id, {
-          gridLayout: {
-            x: currentStep.gridLayout?.x ?? 0,
-            y: currentStep.gridLayout?.y ?? 0,
-            w: currentStep.gridLayout?.w ?? 12,
-            h: newH,
-          },
-        });
-      }
-    });
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [step.id, phaseId]); // only re-create when identity changes
-
-  return (
-    <div ref={ref} className="w-full">
-      <StepCard step={step} phaseId={phaseId} roles={roles} cornerRadius={cornerRadius} cardBackground={cardBackground} phaseColor={phaseColor} />
-    </div>
-  );
-};
+export type DropPlacement = 'before' | 'after' | 'left-of' | 'right-of';
+export interface DropTarget {
+  phaseId: string;
+  stepIndex: number;
+  placement: DropPlacement;
+}
 
 interface PhaseColumnProps {
   phase: Phase;
@@ -111,7 +60,21 @@ interface PhaseColumnProps {
   phaseMinWidth: number;
   prevPhaseColor?: string;
   nextPhaseColor?: string;
+  dropTarget: DropTarget | null;
 }
+
+const DropLine: React.FC = () => (
+  <div className="relative flex items-center py-0.5 pointer-events-none">
+    <div className="h-0.5 w-full rounded-full bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.8)]" />
+  </div>
+);
+
+const ColumnPlaceholder: React.FC = () => (
+  <div
+    className="flex-1 min-w-0 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/60"
+    style={{ minHeight: 60 }}
+  />
+);
 
 export const PhaseColumn: React.FC<PhaseColumnProps> = ({
   phase,
@@ -121,6 +84,7 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
   phaseMinWidth,
   prevPhaseColor,
   nextPhaseColor,
+  dropTarget,
 }) => {
   const selectedElement = useUiStore((s) => s.selectedElement);
   const setSelectedElement = useUiStore((s) => s.setSelectedElement);
@@ -128,21 +92,12 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
   const layout = useInfographicStore((s) => s.layout);
   const { phaseTintOpacity, cardTintOpacity, phaseTransitionSharpness } = layout;
 
-  // White → phase colour interpolation for cards
   const cardBackground = hexMix(phase.backgroundColor, cardTintOpacity / 100);
 
-  // Symmetric 4-stop gradient centred at the column boundary.
-  // ALL colour stops are computed as solid RGB (not hex+opacity) so that both
-  // sides of every boundary render the exact same midpoint colour, eliminating
-  // the pixel-seam artefact that opacity-blending across separate divs causes.
   const blendHalf = (100 - phaseTransitionSharpness) / 2;
   const leftIn = `${blendHalf.toFixed(1)}%`;
   const rightOut = `${(100 - blendHalf).toFixed(1)}%`;
 
-  /**
-   * tintRatio: 1.0 → fully saturated phase colour (header), phaseTintOpacity/100 → card area tint.
-   * Boundary stops = 50% RGB blend of the two neighbours, so columns agree exactly.
-   */
   const phaseGradient = (tintRatio: number): string | undefined => {
     if (!phase.backgroundColor) return undefined;
     const tint = (hex: string) => hexMix(hex, tintRatio);
@@ -154,7 +109,6 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
     return `linear-gradient(to right, ${leftEdge} 0%, ${curC} ${leftIn}, ${curC} ${rightOut}, ${rightEdge} 100%)`;
   };
 
-  // Phase background pattern CSS
   const getPatternStyle = (pattern: string): React.CSSProperties => {
     const c = 'rgba(0,0,0,0.07)';
     switch (pattern) {
@@ -179,32 +133,24 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
   };
 
   const patternStyle = getPatternStyle(layout.phaseBackgroundPattern || 'none');
-
   const isSelected = selectedElement?.type === 'phase' && selectedElement.phaseId === phase.id;
-  const [isDragging, setIsDragging] = React.useState(false);
-  const dragStartTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const layoutItems = phase.steps.map((step) => {
-    const gl = step.gridLayout || { x: 0, y: 9999, w: 12, h: 10 };
-    return { ...gl, x: Math.round(gl.x / 12) * 12, w: 12 };
-  });
+  // Droppable zone for cross-phase drops into this phase
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `phase-${phase.id}` });
 
-  const maxRightEdge = Math.max(12, ...layoutItems.map((l) => l.x + l.w));
-  const activeBlocks = Math.ceil(maxRightEdge / 12);
-  const totalBlocks = isDragging ? activeBlocks + 1 : activeBlocks;
-  const currentCols = Math.max(12, totalBlocks * 12);
-  const currentWidth = Math.max(phaseMinWidth, totalBlocks * phaseMinWidth);
+  const rows = groupStepsIntoRows(phase.steps);
 
   return (
     <div
       className={`flex flex-col transition-all flex-1 min-w-0 ${isSelected ? 'z-10' : ''}`}
       style={{
-        minWidth: `${currentWidth}px`,
-        '--phase-color': phase.backgroundColor
+        minWidth: `${phaseMinWidth}px`,
+        '--phase-color': phase.backgroundColor,
       } as React.CSSProperties}
+      data-phase-id={phase.id}
       data-selected={isSelected}
     >
-      {/* Phase header — centered */}
+      {/* Phase header */}
       <div
         className="p-3 flex flex-col items-center justify-center cursor-pointer border-b border-transparent hover:border-slate-200 transition-colors shrink-0 h-[72px] text-center"
         style={{
@@ -238,91 +184,80 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
         </p>
       </div>
 
-      {/* Steps grid — always react-grid-layout so all phases support side-by-side dragging */}
+      {/* Steps area */}
       <div
-        className="p-3 pb-6 flex-1 flex flex-col relative transition-all"
-        style={{ background: phaseGradient(phaseTintOpacity / 100) }}
+        ref={setDropRef}
+        className={`p-3 pb-6 flex-1 flex flex-col relative transition-all ${isOver ? 'ring-2 ring-inset ring-blue-300' : ''}`}
+        style={{ background: phaseGradient(phaseTintOpacity / 100), gap: stepGap }}
       >
         {/* Pattern overlay */}
         {layout.phaseBackgroundPattern && layout.phaseBackgroundPattern !== 'none' && (
           <div className="absolute inset-0 pointer-events-none" style={patternStyle} />
         )}
-        <GridLayout
-          className="layout"
-          layout={phase.steps.map((step) => {
-            const gl = step.gridLayout || { x: 0, y: 9999, w: 12, h: 10 };
-            return { i: step.id, ...gl, w: 12, x: Math.round(gl.x / 12) * 12 };
-          })}
-          cols={currentCols}
-          rowHeight={ROW_HEIGHT}
-          margin={[stepGap, stepGap]}
-          onLayoutChange={(layout: any) => {
-            layout.forEach((item: any) => {
-              const step = phase.steps.find((s: any) => s.id === item.i);
-              const fixedW = 12;
-              const fixedX = Math.round(item.x / 12) * 12;
-              if (
-                step &&
-                (!step.gridLayout ||
-                  step.gridLayout.x !== fixedX ||
-                  step.gridLayout.y !== item.y ||
-                  step.gridLayout.w !== fixedW)
-                // NOTE: we intentionally skip h here — CardWrapper owns h via ResizeObserver
-              ) {
-                useInfographicStore.getState().updateStep(phase.id, item.i, {
-                  gridLayout: { x: fixedX, y: item.y, w: fixedW, h: step.gridLayout?.h ?? 10 },
-                });
-              }
-            });
-          }}
-          onDragStart={() => {
-            // Delay drag state so a simple click doesn't instantly resize the columns
-            dragStartTimer.current = setTimeout(() => {
-              setIsDragging(true);
-              useUiStore.getState().setIsDraggingCard(true);
-            }, 100);
-          }}
-          onDragStop={(_layout: any, _oldItem: any, newItem: any, _placeholder: any, e: Event, _element: any) => {
-            if (dragStartTimer.current) {
-              clearTimeout(dragStartTimer.current);
-              dragStartTimer.current = null;
-            }
-            setIsDragging(false);
-            useUiStore.getState().setIsDraggingCard(false);
 
-            let clientY = 0;
-            const event = e as unknown as MouseEvent | TouchEvent;
-            if ('clientY' in event) clientY = event.clientY;
-            else if ('changedTouches' in event && event.changedTouches.length > 0)
-              clientY = event.changedTouches[0].clientY;
+        {/* Rows of cards */}
+        {rows.map((row) => {
+          const leftIdx = phase.steps.findIndex((s) => s.id === row.left.id);
+          const rightIdx = row.right ? phase.steps.findIndex((s) => s.id === row.right!.id) : -1;
 
-            if (clientY > 0 && clientY > window.innerHeight - 150) {
-              useInfographicStore.getState().removeStep(phase.id, newItem.i);
-            }
-          }}
-          compactType="vertical"
-          isResizable={false}
-        >
-          {phase.steps.map((step) => {
-            const gl = step.gridLayout || { x: 0, y: 9999, w: 12, h: 10 };
-            const gridProps = { ...gl, w: 12, x: Math.round(gl.x / 12) * 12 };
-            return (
-              <div key={step.id} data-grid={gridProps}>
-                <CardWrapper
-                  step={step}
-                  phaseId={phase.id}
-                  roles={roles}
-                  cornerRadius={cornerRadius}
-                  stepGap={stepGap}
-                  cardBackground={cardBackground}
-                  phaseColor={phase.backgroundColor}
-                />
+          const isThisPhase = dropTarget?.phaseId === phase.id;
+          const showBefore = isThisPhase && dropTarget!.placement === 'before' && dropTarget!.stepIndex === leftIdx;
+          const showAfter = isThisPhase && dropTarget!.placement === 'after' &&
+            (dropTarget!.stepIndex === leftIdx || (rightIdx >= 0 && dropTarget!.stepIndex === rightIdx));
+          const showLeftOf = isThisPhase && dropTarget!.placement === 'left-of' && dropTarget!.stepIndex === leftIdx;
+          const showRightOf = isThisPhase && dropTarget!.placement === 'right-of' && dropTarget!.stepIndex === leftIdx;
+
+          return (
+            <React.Fragment key={row.left.id}>
+              {showBefore && <DropLine />}
+
+              <div className="flex" style={{ gap: stepGap }}>
+                {/* Ghost placeholder on the LEFT side when dropping left-of this card */}
+                {showLeftOf && <ColumnPlaceholder />}
+
+                {/* Left (or full-width) card */}
+                <div className="flex-1 min-w-0">
+                  <DraggableStepCard
+                    step={row.left}
+                    phaseId={phase.id}
+                    roles={roles}
+                    cornerRadius={cornerRadius}
+                    cardBackground={cardBackground}
+                    phaseColor={phase.backgroundColor}
+                  />
+                </div>
+
+                {/* Right card of a pair */}
+                {row.right && (
+                  <div className="flex-1 min-w-0">
+                    <DraggableStepCard
+                      step={row.right}
+                      phaseId={phase.id}
+                      roles={roles}
+                      cornerRadius={cornerRadius}
+                      cardBackground={cardBackground}
+                      phaseColor={phase.backgroundColor}
+                    />
+                  </div>
+                )}
+
+                {/* Ghost placeholder on the RIGHT side when dropping right-of this card */}
+                {showRightOf && <ColumnPlaceholder />}
               </div>
-            );
-          })}
-        </GridLayout>
 
-        {/* Add step — hidden during export via .editor-only */}
+              {showAfter && <DropLine />}
+            </React.Fragment>
+          );
+        })}
+
+        {/* Empty phase drop indicator */}
+        {phase.steps.length === 0 && dropTarget?.phaseId === phase.id && (
+          <div className="h-16 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/60 flex items-center justify-center pointer-events-none">
+            <span className="text-xs text-blue-400 font-medium">Drop here</span>
+          </div>
+        )}
+
+        {/* Add step button */}
         <button
           className="editor-only flex flex-col items-center justify-center p-4 rounded-lg border-2 border-dashed border-slate-200 opacity-50 hover:opacity-100 hover:border-primary transition-all group mt-2 w-full shrink-0"
           onClick={(e) => {
