@@ -1,9 +1,16 @@
 import { create } from 'zustand';
-import type { SelectedElement, ConnectorHandlePosition } from '../types';
+import type { SelectedElement, ConnectorHandlePosition, Step } from '../types';
+import { DEFAULT_ZOOM } from '../config/constants';
 
 interface ConnectingFrom {
   stepId: string;
   handle: ConnectorHandlePosition;
+}
+
+interface DraggedStepInfo {
+  stepId: string;
+  sourcePhaseId: string;
+  step: Step;
 }
 
 interface UiStore {
@@ -20,6 +27,7 @@ interface UiStore {
   integrationsOpen: boolean;
   brandKitOpen: boolean;
   presentationOpen: boolean;
+  draggedStepInfo: DraggedStepInfo | null;
 
   setSelectedElement: (el: SelectedElement) => void;
   setSidebarOpen: (open: boolean) => void;
@@ -35,13 +43,14 @@ interface UiStore {
   setIntegrationsOpen: (open: boolean) => void;
   setBrandKitOpen: (open: boolean) => void;
   setPresentationOpen: (open: boolean) => void;
+  setDraggedStepInfo: (info: DraggedStepInfo | null) => void;
 }
 
 export const useUiStore = create<UiStore>((set) => ({
   selectedElement: null,
   sidebarOpen: true,
   aiPanelOpen: false,
-  zoom: 0.65,
+  zoom: DEFAULT_ZOOM,
   panX: 0,
   panY: 0,
   isDraggingCard: false,
@@ -51,6 +60,7 @@ export const useUiStore = create<UiStore>((set) => ({
   integrationsOpen: false,
   brandKitOpen: false,
   presentationOpen: false,
+  draggedStepInfo: null,
 
   setSelectedElement: (el) => set({ selectedElement: el, sidebarOpen: true }),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -58,7 +68,7 @@ export const useUiStore = create<UiStore>((set) => ({
   toggleAiPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
   setZoom: (zoom) => set({ zoom: Math.min(2, Math.max(0.2, zoom)) }),
   setPan: (x, y) => set({ panX: x, panY: y }),
-  resetView: () => set({ zoom: 0.65, panX: 0, panY: 0 }),
+  resetView: () => set({ zoom: DEFAULT_ZOOM, panX: 0, panY: 0 }),
   setIsDraggingCard: (dragging) => set({ isDraggingCard: dragging }),
   setConnectMode: (on) => set({ connectMode: on, connectingFrom: on ? null : null }),
   setConnectingFrom: (from) => set({ connectingFrom: from }),
@@ -66,4 +76,5 @@ export const useUiStore = create<UiStore>((set) => ({
   setIntegrationsOpen: (open) => set({ integrationsOpen: open }),
   setBrandKitOpen: (open) => set({ brandKitOpen: open }),
   setPresentationOpen: (open) => set({ presentationOpen: open }),
+  setDraggedStepInfo: (info) => set({ draggedStepInfo: info }),
 }));

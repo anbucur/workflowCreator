@@ -2,9 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { AppShell } from './components/layout/AppShell';
 import { useInfographicStore } from './store/useInfographicStore';
 import { useThemeStore } from './store/useThemeStore';
+import { PROJECTS_API_URL, AUTO_SAVE_DELAY } from './config/constants';
 import debounce from 'lodash.debounce';
-
-const BACKEND_URL = '/api/projects';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -25,7 +24,7 @@ function App() {
   const saveToDb = useCallback(
     debounce(async (data) => {
       try {
-        await fetch(BACKEND_URL, {
+        await fetch(PROJECTS_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -35,16 +34,16 @@ function App() {
           })
         });
       } catch (e) { console.error('Auto-save failed', e); }
-    }, 1000),
+    }, AUTO_SAVE_DELAY),
     []
   );
 
   useEffect(() => {
-    fetch(BACKEND_URL)
+    fetch(PROJECTS_API_URL)
       .then(res => res.json())
       .then(projects => {
         if (projects && projects.length > 0) {
-          return fetch(`${BACKEND_URL}/${projects[0].id}`).then(res => res.json());
+          return fetch(`${PROJECTS_API_URL}/${projects[0].id}`).then(res => res.json());
         }
         return null; // Start fresh
       })

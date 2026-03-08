@@ -48,3 +48,27 @@ export const TSHIRT_COLORS: Record<string, { bg: string; text: string }> = {
   'XL': { bg: '#fecaca', text: '#991b1b' },
   'XXL': { bg: '#e9d5ff', text: '#6b21a8' },
 };
+
+/**
+ * Darken a hex color by a fraction (0–1)
+ */
+export function darkenColor(hex: string, amount = 0.25): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `#${Math.round(r * (1 - amount)).toString(16).padStart(2, '0')}${Math.round(g * (1 - amount)).toString(16).padStart(2, '0')}${Math.round(b * (1 - amount)).toString(16).padStart(2, '0')}`;
+}
+
+/**
+ * Get Tailwind shadow class based on shadow type
+ */
+export function getShadowClass(shadow: string): string {
+  switch (shadow) {
+    case 'none': return 'shadow-none';
+    case 'soft': return 'shadow-sm shadow-slate-900/5';
+    case 'medium': return 'shadow-md shadow-slate-900/10';
+    case 'hard': return 'shadow-xl shadow-slate-900/20';
+    case 'neon': return ''; // Handle via inline styles
+    default: return 'shadow-sm shadow-slate-900/5';
+  }
+}

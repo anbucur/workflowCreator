@@ -1,7 +1,22 @@
+import * as LucideIcons from 'lucide-react';
+import type { LucideProps } from 'lucide-react';
+
 export interface IconEntry {
   name: string;
   label: string;
   category: string;
+}
+
+/**
+ * Dynamically get a Lucide icon component by name
+ */
+export function getIcon(name: string): React.ComponentType<LucideProps> | null {
+  // Convert kebab-case to PascalCase
+  const pascalName = name
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
+  return (LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>)[pascalName] || null;
 }
 
 export const ICON_SET: IconEntry[] = [

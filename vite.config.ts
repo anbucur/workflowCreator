@@ -29,6 +29,23 @@ const isValidName = (name: unknown): name is string =>
 
 const MAX_DATA_SIZE = 5 * 1024 * 1024; // 5MB max for project data
 
+// Browser-like headers to avoid 403 errors
+const BROWSER_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'Cache-Control': 'max-age=0',
+  'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+  'Sec-Ch-Ua-Mobile': '?0',
+  'Sec-Ch-Ua-Platform': '"Windows"',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'none',
+  'Sec-Fetch-User': '?1',
+  'Upgrade-Insecure-Requests': '1',
+};
+
 // ─── AI Tool Definitions & System Prompt ─────────────────────────────
 const STEP_TYPES = ['standard', 'meeting', 'decision', 'parallel', 'checklist', 'handoff', 'milestone', 'document', 'estimation', 'collaboration', 'timeline', 'risk', 'metrics', 'kanban', 'okr', 'sprint', 'roadmap', 'executive'];
 const THEME_IDS = ['ocean-depth', 'sunset-glow', 'forest-canopy', 'corporate-clean', 'monochrome-slate', 'midnight-neon', 'warm-earth', 'berry-blast'];
@@ -64,7 +81,14 @@ const WEB_SEARCH_TOOL_DEFINITIONS = [
 ];
 
 function buildAISystemPrompt(snapshot: any, documentContext?: any, integrations?: any, webSearchEnabled?: boolean): string {
+  const now = new Date();
+  const currentDate = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const currentTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+  
   let prompt = `You are an AI assistant built directly into PhaseCraft, a workflow infographic editor.
+
+CURRENT DATE AND TIME:
+Today is ${currentDate}. The current time is ${currentTime}.
 Your job is to help the user build, modify, and style their workflow infographic.
 
 CRITICAL INSTRUCTIONS:
@@ -553,9 +577,7 @@ const apiPlugin = () => ({
           // DuckDuckGo HTML search (no API key needed)
           const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
           const r = await fetch(ddgUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            },
+            headers: BROWSER_HEADERS,
           });
           if (!r.ok) throw new Error(`DuckDuckGo: ${r.status}`);
           const html = await r.text();
@@ -622,10 +644,7 @@ const apiPlugin = () => ({
 
       try {
         const r = await fetch(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          },
+          headers: BROWSER_HEADERS,
           redirect: 'follow',
           signal: AbortSignal.timeout(15000),
         });
@@ -663,7 +682,7 @@ const apiPlugin = () => ({
 
     // ─── AI Chat Endpoint ───────────────────────────────────────────────
     apiApp.post('/ai/chat', async (req: any, res: any) => {
-      const { messages, snapshot, model = 'zai', documentContext, integrations, webSearchEnabled, webSearchProvider, braveApiKey } = req.body;
+      const { messages, snapshot, model = 'zai', documentContext, integrations, webSearchEnabled } = req.body;
 
       let apiKey;
       let baseURL;

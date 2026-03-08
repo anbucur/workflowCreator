@@ -6,27 +6,8 @@ import { StepContentRouter } from './step-content/StepContentRouter';
 import { ConnectorHandle } from './ConnectorHandle';
 import { STEP_TYPE_LABELS } from '../../types';
 import { getContrastTextColor, getContrastMutedColor, isDarkBackground } from '../../utils/contrast';
-
-// Global drag state for cross-phase card movement (shared with PhaseColumn)
-declare global {
-  interface Window {
-    __draggedStepInfo: { stepId: string; sourcePhaseId: string; step: Step } | null;
-  }
-}
-
-// Dynamically render lucide icons by name
-import * as LucideIcons from 'lucide-react';
-
-import type { LucideProps } from 'lucide-react';
-
-function getIcon(name: string): React.ComponentType<LucideProps> | null {
-  // Convert kebab-case to PascalCase
-  const pascalName = name
-    .split('-')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-  return (LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>)[pascalName] || null;
-}
+import { darkenColor, getShadowClass } from '../../utils/colors';
+import { getIcon } from '../../utils/icons';
 
 interface StepCardProps {
   step: Step;
@@ -85,27 +66,8 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
     return true;
   }, [step]);
 
-  const getShadowClass = (shadow: string) => {
-    switch (shadow) {
-      case 'none': return 'shadow-none';
-      case 'soft': return 'shadow-sm shadow-slate-900/5';
-      case 'medium': return 'shadow-md shadow-slate-900/10';
-      case 'hard': return 'shadow-xl shadow-slate-900/20';
-      case 'neon': return ''; // Handle via inline styles
-      default: return 'shadow-sm shadow-slate-900/5';
-    }
-  };
-
   const shadowClass = getShadowClass(layout.cardShadow || 'soft');
   const showIcon = layout.showStepIcons ?? true;
-
-  // Darken a hex colour by a fraction (0–1)
-  const darkenColor = (hex: string, amount = 0.25): string => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `#${Math.round(r * (1 - amount)).toString(16).padStart(2, '0')}${Math.round(g * (1 - amount)).toString(16).padStart(2, '0')}${Math.round(b * (1 - amount)).toString(16).padStart(2, '0')}`;
-  };
 
   // Compute the label badge background: match-phase uses a darkened phase colour
   const labelBg = layout.stepLabelMatchPhase

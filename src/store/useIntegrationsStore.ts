@@ -60,17 +60,6 @@ async function jiraFetch(config: JiraConfig, path: string) {
   return res.json();
 }
 
-async function confluenceFetch(config: ConfluenceConfig, path: string) {
-  const res = await fetch(`/api/integrations/confluence/${path}`, {
-    headers: {
-      'x-confluence-email': config.email,
-      'x-confluence-token': config.token,
-    },
-  });
-  if (!res.ok) throw new Error(`Confluence API ${res.status}: ${res.statusText}`);
-  return res.json();
-}
-
 export const useIntegrationsStore = create<IntegrationsStore>((set, get) => ({
   connections: {},
   liveData: {},
