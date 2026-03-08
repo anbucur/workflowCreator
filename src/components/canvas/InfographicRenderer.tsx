@@ -2,7 +2,7 @@ import React from 'react';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useUiStore } from '../../store/useUiStore';
 import { TitleBar } from './TitleBar';
-import { PhaseColumn, groupStepsIntoRows } from './PhaseColumn';
+import { PhaseColumn, hexMix } from './PhaseColumn';
 import type { DropTarget } from './PhaseColumn';
 import { Plus } from 'lucide-react';
 import { ConnectorOverlay } from './ConnectorOverlay';
@@ -206,16 +206,7 @@ export const InfographicRenderer = React.forwardRef<HTMLDivElement>((_, _outerRe
   // Find the active step's card styling for the DragOverlay clone
   const overlayPhase = activePhaseId ? phases.find((p) => p.id === activePhaseId) : null;
   const overlayCardBg = overlayPhase
-    ? (() => {
-        const { cardTintOpacity } = layout;
-        const hex = overlayPhase.backgroundColor;
-        if (!hex || !hex.startsWith('#') || hex.length < 7) return '#ffffff';
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        const mix = (c: number) => Math.round(255 + (c - 255) * (cardTintOpacity / 100));
-        return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
-      })()
+    ? hexMix(overlayPhase.backgroundColor, layout.cardTintOpacity / 100)
     : undefined;
 
   return (
