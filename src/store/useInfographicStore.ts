@@ -98,13 +98,34 @@ export const useInfographicStore = create<InfographicStore>()(
       ),
     })),
 
-    removeStep: (phaseId, stepId) => set((s) => ({
-      phases: s.phases.map((p) =>
-        p.id === phaseId ? { ...p, steps: p.steps.filter((st) => st.id !== stepId) } : p
-      ),
-      // cascade-delete connectors referencing this step
-      connectors: (s.connectors || []).filter((c) => c.sourceStepId !== stepId && c.targetStepId !== stepId),
-    })),
+    removeStep: (phaseId, stepId) => set((s) => {
+      const phase = s.phases.find((p) => p.id === phaseId);
+      if (!phase) return {};
+
+      const stepIdx = phase.steps.findIndex((st) => st.id === stepId);
+      if (stepIdx === -1) return {};
+
+      const removedStep = phase.steps[stepIdx];
+
+      const newPhases = s.phases.map((p) => {
+        if (p.id !== phaseId) return p;
+        const newSteps = p.steps.filter((st) => st.id !== stepId);
+
+        // Orphan cleanup: if removed was the left card (col 0) and the next step is a right card (col 1),
+        // the right card is now orphaned → make it full-width (col 0)
+        if ((removedStep.gridCol ?? 0) === 0 && newSteps[stepIdx]?.gridCol === 1) {
+          newSteps[stepIdx] = { ...newSteps[stepIdx], gridCol: 0 };
+        }
+
+        return { ...p, steps: newSteps };
+      });
+
+      return {
+        phases: newPhases,
+        // cascade-delete connectors referencing this step
+        connectors: (s.connectors || []).filter((c) => c.sourceStepId !== stepId && c.targetStepId !== stepId),
+      };
+    }),
 
     updateStep: (phaseId, stepId, updates) => set((s) => ({
       phases: s.phases.map((p) =>
