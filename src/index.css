@@ -51,8 +51,3 @@ body,
 [data-dnd-overlay] {
   pointer-events: none;
 }
-
-/* Smooth layout shifts when cards rearrange after a drop */
-[data-step-id] {
-  will-change: opacity;
-}
