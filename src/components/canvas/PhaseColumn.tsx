@@ -7,7 +7,7 @@ import { DraggableStepCard } from './DraggableStepCard';
 import { Plus } from 'lucide-react';
 
 /** Linearly interpolate a hex colour toward white. ratio=0 → white, ratio=1 → full hex colour. */
-function hexMix(hex: string, ratio: number): string {
+export function hexMix(hex: string, ratio: number): string {
   if (!hex || !hex.startsWith('#') || hex.length < 7) return '#ffffff';
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
