@@ -1,32 +1,36 @@
 import React, { useState } from 'react';
-import { X, Github, Zap, RefreshCw, CheckCircle, AlertCircle, Clock, ExternalLink, Search, Shield, Wifi, WifiOff } from 'lucide-react';
+import { X, Github, Zap, RefreshCw, CheckCircle, AlertCircle, Clock, ExternalLink, Search, Shield, Wifi, WifiOff, BookOpen } from 'lucide-react';
 import { useIntegrationsStore } from '../../store/useIntegrationsStore';
 import { useThemeStore } from '../../store/useThemeStore';
-import type { GitHubConfig, JiraConfig } from '../../types/integrations';
+import type { GitHubConfig, JiraConfig, ConfluenceConfig } from '../../types/integrations';
 
 interface Props {
   onClose: () => void;
 }
 
-type Tab = 'github' | 'jira' | 'live' | 'verify';
+type Tab = 'github' | 'jira' | 'confluence' | 'live' | 'verify';
 
 export const IntegrationsModal: React.FC<Props> = ({ onClose }) => {
   const { isDarkMode } = useThemeStore();
   const {
     connections, liveData, syncing, lastError, featureChecks,
-    connectGitHub, connectJira, disconnect, syncAll, verifyFeature, isConnected, clearError,
+    connectGitHub, connectJira, connectConfluence, disconnect, syncAll, verifyFeature, isConnected, clearError,
+    confluencePages,
   } = useIntegrationsStore();
 
   const [tab, setTab] = useState<Tab>('github');
   const [ghForm, setGhForm] = useState<GitHubConfig>({ token: '', owner: '', repo: '' });
   const [jiraForm, setJiraForm] = useState<JiraConfig>({ domain: '', email: '', token: '', projectKey: '' });
+  const [confForm, setConfForm] = useState<ConfluenceConfig>({ domain: '', email: '', token: '', spaceKey: '' });
   const [verifyInput, setVerifyInput] = useState('');
   const [verifying, setVerifying] = useState(false);
 
   const ghConnected = isConnected('github');
   const jiraConnected = isConnected('jira');
+  const confConnected = isConnected('confluence');
   const ghConn = connections['github'];
   const jiraConn = connections['jira'];
+  const confConn = connections['confluence'];
 
   const handleConnectGitHub = async () => {
     clearError();
@@ -36,6 +40,19 @@ export const IntegrationsModal: React.FC<Props> = ({ onClose }) => {
   const handleConnectJira = async () => {
     clearError();
     await connectJira(jiraForm);
+  };
+
+  const handleConnectConfluence = async () => {
+    clearError();
+    // Auto-fill from Jira if same domain
+    const form = { ...confForm };
+    if (!form.domain && jiraConnected && jiraConn) {
+      const jiraConfig = jiraConn.config as JiraConfig;
+      form.domain = jiraConfig.domain;
+      form.email = jiraConfig.email;
+      form.token = jiraConfig.token;
+    }
+    await connectConfluence(form);
   };
 
   const handleVerify = async () => {
@@ -55,6 +72,7 @@ export const IntegrationsModal: React.FC<Props> = ({ onClose }) => {
   const TAB_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'github', label: 'GitHub', icon: <Github size={15} /> },
     { id: 'jira', label: 'Jira', icon: <Zap size={15} /> },
+    { id: 'confluence', label: 'Confluence', icon: <BookOpen size={15} /> },
     { id: 'live', label: 'Live Data', icon: <RefreshCw size={15} /> },
     { id: 'verify', label: 'Verify Feature', icon: <Search size={15} /> },
   ];
@@ -70,7 +88,7 @@ export const IntegrationsModal: React.FC<Props> = ({ onClose }) => {
             </div>
             <div>
               <h2 className="font-bold text-lg">Integrations</h2>
-              <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Connect GitHub, Jira & live project data</p>
+              <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Connect GitHub, Jira, Confluence & live project data</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -103,6 +121,13 @@ export const IntegrationsModal: React.FC<Props> = ({ onClose }) => {
             {jiraConnected ? <CheckCircle size={12} className="text-green-500" /> : <WifiOff size={12} className="text-slate-400" />}
             <span className={jiraConnected ? 'text-green-600 font-semibold' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}>
               Jira {jiraConnected ? `(${(jiraConn?.config as JiraConfig)?.projectKey})` : 'not connected'}
+            </span>
+          </div>
+          <span className={isDarkMode ? 'text-slate-700' : 'text-slate-200'}>|</span>
+          <div className="flex items-center gap-1.5">
+            {confConnected ? <CheckCircle size={12} className="text-green-500" /> : <WifiOff size={12} className="text-slate-400" />}
+            <span className={confConnected ? 'text-green-600 font-semibold' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}>
+              Confluence {confConnected ? `(${(confConn?.config as ConfluenceConfig)?.spaceKey})` : 'not connected'}
             </span>
           </div>
         </div>
@@ -332,6 +357,93 @@ export const IntegrationsModal: React.FC<Props> = ({ onClose }) => {
                         </div>
                       ))}
                     </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Confluence Tab ── */}
+          {tab === 'confluence' && (
+            <div className="space-y-4">
+              {confConnected ? (
+                <div className={`rounded-xl p-4 border ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle size={18} className="text-green-500" />
+                      <span className="font-semibold text-green-600">Connected</span>
+                    </div>
+                    <button onClick={() => disconnect('confluence')} className={btnDanger}>Disconnect</button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <div className={labelCls}>Domain</div>
+                      <code className="text-sm">{(confConn?.config as ConfluenceConfig)?.domain}</code>
+                    </div>
+                    <div>
+                      <div className={labelCls}>Space Key</div>
+                      <code className="text-sm font-bold">{(confConn?.config as ConfluenceConfig)?.spaceKey}</code>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className={`rounded-xl p-4 border ${isDarkMode ? 'bg-blue-950/30 border-blue-800' : 'bg-blue-50 border-blue-200'} flex gap-3`}>
+                    <Shield size={16} className={`mt-0.5 flex-shrink-0 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                    <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                      Uses the same Atlassian credentials as Jira. {jiraConnected ? 'Domain, email, and token are auto-filled from your Jira connection.' : 'Create an API token at Atlassian Account Settings.'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Atlassian Domain</label>
+                    <input className={inputCls} placeholder="yourcompany.atlassian.net"
+                      value={confForm.domain || (jiraConnected ? (jiraConn?.config as JiraConfig)?.domain : '')}
+                      onChange={e => setConfForm(f => ({ ...f, domain: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={labelCls}>Email</label>
+                      <input className={inputCls} placeholder="you@company.com" type="email"
+                        value={confForm.email || (jiraConnected ? (jiraConn?.config as JiraConfig)?.email : '')}
+                        onChange={e => setConfForm(f => ({ ...f, email: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Space Key</label>
+                      <input className={inputCls} placeholder="MYSPACE"
+                        value={confForm.spaceKey} onChange={e => setConfForm(f => ({ ...f, spaceKey: e.target.value.toUpperCase() }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelCls}>API Token</label>
+                    <input type="password" className={inputCls} placeholder="ATATT…"
+                      value={confForm.token || (jiraConnected ? (jiraConn?.config as JiraConfig)?.token : '')}
+                      onChange={e => setConfForm(f => ({ ...f, token: e.target.value }))} />
+                  </div>
+                  <button
+                    className={btnPrimary}
+                    disabled={!(confForm.domain || (jiraConnected && (jiraConn?.config as JiraConfig)?.domain)) || !confForm.spaceKey || syncing}
+                    onClick={handleConnectConfluence}
+                  >
+                    <BookOpen size={15} />
+                    {syncing ? 'Connecting…' : 'Connect Confluence'}
+                  </button>
+                </div>
+              )}
+
+              {/* Recent pages */}
+              {confConnected && confluencePages.length > 0 && (
+                <div className={`rounded-xl p-4 border ${cardBg}`}>
+                  <div className="font-semibold text-sm mb-2">Recent Pages ({confluencePages.length})</div>
+                  <div className="space-y-1">
+                    {confluencePages.slice(0, 8).map((page) => (
+                      <div key={page.id} className="flex items-center gap-2 text-sm">
+                        <BookOpen size={12} className={isDarkMode ? 'text-slate-500' : 'text-slate-400'} />
+                        <span className="flex-1 truncate">{page.title}</span>
+                        <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                          {page.lastModified ? new Date(page.lastModified).toLocaleDateString() : ''}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

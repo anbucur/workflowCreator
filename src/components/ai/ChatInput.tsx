@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Send } from 'lucide-react';
 import { useThemeStore } from '../../store/useThemeStore';
 
@@ -9,6 +9,7 @@ interface ChatInputProps {
 
 export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
     const [text, setText] = React.useState('');
+    const [isFocused, setIsFocused] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isDarkMode = useThemeStore((s) => s.isDarkMode);
 
@@ -41,24 +42,35 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
     };
 
     return (
-        <div className={`relative flex items-end gap-2 rounded-xl p-2 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent transition-all ${isDarkMode ? 'bg-slate-900 border border-slate-600' : 'bg-white border border-slate-300'}`}>
-            <textarea
-                ref={textareaRef}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask AI to update the workflow..."
-                className={`w-full resize-none bg-transparent outline-none max-h-[150px] min-h-[24px] overflow-y-auto text-sm py-1 px-1 transition-colors ${isDarkMode ? 'text-slate-100 placeholder:text-slate-500' : 'placeholder:text-slate-400'}`}
-                rows={1}
-                disabled={disabled}
-            />
-            <button
-                onClick={handleSend}
-                disabled={!text.trim() || disabled}
-                className="shrink-0 p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 transition-colors"
-            >
-                <Send size={16} />
-            </button>
+        <div>
+            <div className={`relative flex items-end gap-2 rounded-xl p-2 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent transition-all ${isDarkMode ? 'bg-slate-900 border border-slate-600' : 'bg-white border border-slate-300'}`}>
+                <textarea
+                    ref={textareaRef}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    placeholder="Ask AI to update the workflow..."
+                    className={`w-full resize-none bg-transparent outline-none max-h-[150px] min-h-[24px] overflow-y-auto text-sm py-1 px-1 transition-colors ${isDarkMode ? 'text-slate-100 placeholder:text-slate-500' : 'placeholder:text-slate-400'}`}
+                    rows={1}
+                    disabled={disabled}
+                />
+                <button
+                    onClick={handleSend}
+                    disabled={!text.trim() || disabled}
+                    className="shrink-0 p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 transition-colors"
+                >
+                    <Send size={16} />
+                </button>
+            </div>
+            {/* Keyboard shortcut hints */}
+            {isFocused && !text && (
+                <div className={`flex justify-between mt-1.5 px-1 text-[10px] transition-colors ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                    <span>Enter to send</span>
+                    <span>Shift+Enter for newline</span>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,6 +1,6 @@
 // ─── Integration connection configs ───────────────────────────────────────────
 
-export type IntegrationProvider = 'github' | 'gitlab' | 'jira';
+export type IntegrationProvider = 'github' | 'gitlab' | 'jira' | 'confluence';
 
 export interface GitHubConfig {
   token: string;
@@ -19,6 +19,20 @@ export interface JiraConfig {
   email: string;
   token: string;
   projectKey: string;
+}
+
+export interface ConfluenceConfig {
+  domain: string; // e.g. mycompany.atlassian.net
+  email: string;
+  token: string;
+  spaceKey: string;
+}
+
+export interface ConfluencePage {
+  id: string;
+  title: string;
+  status: string;
+  lastModified: string;
 }
 
 // ─── Live data shapes returned from integrations ──────────────────────────────
@@ -97,7 +111,7 @@ export interface IntegrationConnection {
   connected: boolean;
   error?: string;
   lastSync?: string;
-  config: GitHubConfig | GitLabConfig | JiraConfig;
+  config: GitHubConfig | GitLabConfig | JiraConfig | ConfluenceConfig;
 }
 
 export interface IntegrationLiveData {

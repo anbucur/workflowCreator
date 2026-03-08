@@ -18,7 +18,13 @@
       "Bash(npm install)",
       "Bash(git fetch origin)",
       "Bash(git add src/components/canvas/ConnectorOverlay.tsx)",
-      "Bash(git commit --no-edit)"
+      "Bash(git commit --no-edit)",
+      "mcp__desktop-commander__read_file",
+      "mcp__desktop-commander__list_directory",
+      "Bash(xargs grep -l \"api\\\\|endpoint\\\\|fetch\\\\|POST\")",
+      "Bash(xargs grep -l \"buildSystemPrompt\\\\|TOOL_DEFINITIONS\")",
+      "mcp__desktop-commander__start_search",
+      "mcp__desktop-commander__get_more_search_results"
     ]
   }
 }

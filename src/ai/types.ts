@@ -37,3 +37,11 @@ export interface ToolResult {
   content: string;
   is_error: boolean;
 }
+
+export interface DocumentContext {
+  fileName: string;
+  fileType: string;
+  content: string;
+  charCount: number;
+  source: 'upload' | 'confluence';
+}

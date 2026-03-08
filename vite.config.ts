@@ -55,19 +55,35 @@ const AI_TOOL_DEFINITIONS = [
   { name: 'update_connector', description: 'Update connector properties.', input_schema: { type: 'object', properties: { connectorId: { type: 'string' }, color: { type: 'string' }, lineStyle: { type: 'string', enum: ['solid', 'dashed', 'dotted'] }, sourceHead: { type: 'string', enum: ['none', 'arrow', 'diamond', 'circle', 'square'] }, targetHead: { type: 'string', enum: ['none', 'arrow', 'diamond', 'circle', 'square'] }, type: { type: 'string', enum: ['straight', 'curved', 'step', 'loop'] }, strokeWidth: { type: 'number' }, label: { type: 'string' } }, required: ['connectorId'] } },
   { name: 'apply_theme', description: 'Apply a predefined theme.', input_schema: { type: 'object', properties: { themeId: { type: 'string', enum: THEME_IDS } }, required: ['themeId'] } },
   { name: 'reset_to_default', description: 'Reset the workflow to empty default state.', input_schema: { type: 'object', properties: {} } },
+  { name: 'fetch_integration_data', description: 'Fetch live data from connected integrations (Jira, GitHub). Returns sprint info, issues, releases, etc.', input_schema: { type: 'object', properties: { provider: { type: 'string', enum: ['jira', 'github'] }, dataType: { type: 'string', enum: ['sprint', 'issues', 'releases', 'workflow_runs', 'all'] } }, required: ['provider'] } },
 ];
 
-function buildAISystemPrompt(snapshot: any): string {
-  return `You are an AI assistant built directly into PhaseCraft, a workflow infographic editor.
+const WEB_SEARCH_TOOL_DEFINITIONS = [
+  { name: 'web_search', description: 'Search the web using DuckDuckGo or Brave Search. Returns a list of results with titles, URLs, and snippets. Use this to find current information, research topics, or gather data for creating workflows.', input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Search query' }, maxResults: { type: 'number', description: 'Max results to return (default: 8, max: 15)' } }, required: ['query'] } },
+  { name: 'fetch_url_content', description: 'Fetch and extract text content from a URL. Use this to read the full content of a web page found via web_search. Returns plain text with HTML stripped.', input_schema: { type: 'object', properties: { url: { type: 'string', description: 'URL to fetch content from (must be http/https)' } }, required: ['url'] } },
+];
+
+function buildAISystemPrompt(snapshot: any, documentContext?: any, integrations?: any, webSearchEnabled?: boolean): string {
+  let prompt = `You are an AI assistant built directly into PhaseCraft, a workflow infographic editor.
 Your job is to help the user build, modify, and style their workflow infographic.
 
 CRITICAL INSTRUCTIONS:
-1. When replying to the user, be VERY CONCISE and friendly. Feel free to use emojis appropriately.
+1. When replying to the user, be VERY CONCISE and friendly.
 2. DO NOT output long paragraphs. Just clearly state what you did or what you can do.
 3. You have access to the current state of the infographic.
 4. If a user asks to change colors, themes, layout, or content, use the tools.
 5. If the request is complex, break it down into multiple tool calls (which you can do in parallel in one turn).
 6. Provide helpful suggestions if the user is stuck (e.g., "Would you like me to make these steps parallel?").
+
+RESPONSE FORMAT:
+- Keep confirmations to 1-3 short sentences max.
+- Use markdown formatting: **bold** for emphasis, \`code\` for IDs and values.
+- When listing what you created, use a compact bulleted list — not numbered paragraphs.
+- Never repeat the user's request back to them verbatim.
+- Never include raw JSON in your text responses.
+- After executing tools, summarize the result concisely, e.g.: "Done! Created **4 phases** with **12 steps** and applied the **ocean-depth** theme."
+- When listing available options (themes, step types, etc.), use a comma-separated inline list, not a bulleted list with descriptions.
+- Use headings (##, ###) to organize longer responses when explaining multiple options or capabilities.
 
 CAPABILITIES:
 - Create, update, and delete phases (workflow stages/columns)
@@ -78,6 +94,12 @@ CAPABILITIES:
 - Add connectors (visual arrows/lines) between steps
 - Set canvas and title bar properties
 - Create enterprise boards: Kanban, OKR trackers, Sprint boards, Product Roadmaps, Executive Dashboards
+- Analyze uploaded documents (TXT, MD, CSV) and Confluence pages to create workflows from their content
+- Answer questions about attached documents
+- Extract processes, checklists, and data from documents to populate workflow steps
+- Fetch live data from connected integrations (Jira, GitHub) to populate dashboards
+- Search the web for current information, research topics, and gather data (when web search is enabled)
+- Fetch and read web page content to extract detailed information
 
 RULES:
 1. Use realistic, professional names and descriptions relevant to the user's domain.
@@ -95,6 +117,17 @@ RULES:
      - If source step is above target step: sourceHandle="bottom", targetHandle="top"
      - If source step is below target step: sourceHandle="top", targetHandle="bottom"
    - The arrow always points FROM source TO target, so the source handle faces toward the target and the target handle faces toward the source.
+
+SMART GENERATION GUIDELINES:
+When creating comprehensive workflows or dashboards:
+- For project management: include phases for planning, execution, review, and retrospective
+- For executive dashboards: always include KPIs, deployment status, and a roadmap
+- For sprint workflows: include backlog, sprint planning, daily standup, review, and retro
+- For data analysis: interpret CSV columns as metrics and create appropriate KPI dashboards
+- For Confluence pages: extract processes, decisions, and action items into workflow steps
+- Match step types to content: use metrics for numbers, kanban for task lists, timeline for dates, checklist for action items, risk for concerns
+- Always add appropriate roles based on the domain
+- Always add connectors between sequential steps across phases
 
 AVAILABLE THEMES: ocean-depth, sunset-glow, forest-canopy, corporate-clean, monochrome-slate, midnight-neon, warm-earth, berry-blast
 
@@ -118,12 +151,77 @@ STEP TYPES AND DATA SCHEMAS:
 - roadmap: { quarters: string[], items: [{ id, title, quarter, status: 'planned'|'in_progress'|'completed'|'cancelled', type: 'feature'|'epic'|'initiative'|'release'|'milestone', team?, progress?: number }] }
 - executive: { kpis: [{ id, label, value: string, change?: string, changeType: 'positive'|'negative'|'neutral', trend: 'up'|'down'|'flat', icon?, color? }], summary?, deploymentVersion?, deploymentStatus?: 'healthy'|'degraded'|'down'|'unknown' }
 
-Note: Use short random strings for IDs inside data objects (e.g. "a1b2c3").
+Note: Use short random strings for IDs inside data objects (e.g. "a1b2c3").`;
+
+  // Inject document context if present
+  if (documentContext && documentContext.content) {
+    const maxDocChars = 50000;
+    const truncatedContent = documentContext.content.length > maxDocChars
+      ? documentContext.content.substring(0, maxDocChars) + '\n\n[...document truncated...]'
+      : documentContext.content;
+
+    prompt += `
+
+ATTACHED DOCUMENT: "${documentContext.fileName}" (${documentContext.fileType}, ${documentContext.charCount} characters, source: ${documentContext.source})
+${'─'.repeat(60)}
+${truncatedContent}
+${'─'.repeat(60)}
+
+You can reference this document to:
+- Analyze its content and extract key information
+- Create workflows, dashboards, or infographics based on its data
+- Answer questions about what's in the document
+- Generate step-by-step processes from the document's instructions
+
+For CSV data, interpret columns and rows to create appropriate visualizations (kanban boards, metrics dashboards, roadmaps, etc.).`;
+  }
+
+  // Inject integration status
+  if (integrations) {
+    const parts: string[] = [];
+    if (integrations.jira) {
+      parts.push(`- Jira: ${integrations.jira.connected ? `Connected (project: ${integrations.jira.projectKey})` : 'Not connected'}`);
+    }
+    if (integrations.github) {
+      parts.push(`- GitHub: ${integrations.github.connected ? `Connected (repo: ${integrations.github.owner}/${integrations.github.repo})` : 'Not connected'}`);
+    }
+    if (integrations.confluence) {
+      parts.push(`- Confluence: ${integrations.confluence.connected ? `Connected (space: ${integrations.confluence.spaceKey})` : 'Not connected'}`);
+    }
+    if (parts.length > 0) {
+      prompt += `
+
+CONNECTED INTEGRATIONS:
+${parts.join('\n')}
+
+When integrations are connected, you can use the fetch_integration_data tool to pull live data and populate steps with real project information.`;
+    }
+  }
+
+  // Inject web search capability
+  if (webSearchEnabled) {
+    prompt += `
+
+WEB SEARCH:
+You have web search enabled. You can use:
+- **web_search**: Search the internet for information. Use this to research topics, find current data, or gather information to create better workflows.
+- **fetch_url_content**: Read the full text content of a web page. Use this after web_search to get detailed information from a specific result.
+
+When the user asks you to research something or you need up-to-date information:
+1. Use web_search to find relevant results
+2. Use fetch_url_content on the most relevant URLs to get detailed information
+3. Synthesize the information into your response or use it to create better workflows
+4. Always cite your sources by mentioning the websites you referenced`;
+  }
+
+  prompt += `
 
 CURRENT WORKFLOW STATE:
 ${JSON.stringify(snapshot, null, 2)}
 
 Use the tools to make changes. Be concise. If the request is ambiguous, ask for clarification.`;
+
+  return prompt;
 }
 
 const apiPlugin = () => ({
@@ -354,9 +452,218 @@ const apiPlugin = () => ({
       } catch (e: any) { res.status(502).json({ error: e.message }); }
     });
 
+    // ─── Confluence Integration Proxy ──────────────────────────────────
+    apiApp.post('/integrations/confluence/verify', async (req: any, res: any) => {
+      const { domain, email, token, spaceKey } = req.body;
+      if (!domain || !email || !token || !spaceKey) return res.status(400).json({ error: 'Missing fields' });
+      if (!isSafeJiraDomain(domain)) {
+        return res.status(400).json({ error: 'Invalid Confluence domain' });
+      }
+      try {
+        const auth = Buffer.from(`${email}:${token}`).toString('base64');
+        const r = await fetch(`https://${domain}/wiki/api/v2/spaces?keys=${encodeURIComponent(spaceKey)}`, {
+          headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+        });
+        if (!r.ok) throw new Error(`Confluence: ${r.status} ${r.statusText}`);
+        const data = await r.json() as any;
+        const space = data.results?.[0];
+        if (!space) throw new Error('Space not found');
+        res.json({ ok: true, name: space.name, key: space.key, id: space.id });
+      } catch (e: any) { res.status(400).json({ error: e.message }); }
+    });
+
+    apiApp.get('/integrations/confluence/pages', async (req: any, res: any) => {
+      const { domain, spaceId } = req.query;
+      const email = req.headers['x-confluence-email'];
+      const token = req.headers['x-confluence-token'];
+      if (!email || !token || !domain || !spaceId) return res.status(400).json({ error: 'Missing params' });
+      if (!isSafeJiraDomain(domain as string)) {
+        return res.status(400).json({ error: 'Invalid domain' });
+      }
+      const auth = Buffer.from(`${email as string}:${token as string}`).toString('base64');
+      try {
+        const r = await fetch(`https://${domain}/wiki/api/v2/spaces/${spaceId}/pages?limit=25&sort=-modified-date`, {
+          headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+        });
+        if (!r.ok) throw new Error(`Confluence pages: ${r.status}`);
+        const data = await r.json() as any;
+        const pages = (data.results || []).map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          status: p.status,
+          lastModified: p.version?.createdAt || '',
+        }));
+        res.json(pages);
+      } catch (e: any) { res.status(502).json({ error: e.message }); }
+    });
+
+    apiApp.get('/integrations/confluence/page/:pageId', async (req: any, res: any) => {
+      const { domain } = req.query;
+      const email = req.headers['x-confluence-email'];
+      const token = req.headers['x-confluence-token'];
+      const { pageId } = req.params;
+      if (!email || !token || !domain || !pageId) return res.status(400).json({ error: 'Missing params' });
+      if (!isSafeJiraDomain(domain as string)) {
+        return res.status(400).json({ error: 'Invalid domain' });
+      }
+      const auth = Buffer.from(`${email as string}:${token as string}`).toString('base64');
+      try {
+        const r = await fetch(`https://${domain}/wiki/api/v2/pages/${pageId}?body-format=storage`, {
+          headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+        });
+        if (!r.ok) throw new Error(`Confluence page: ${r.status}`);
+        const data = await r.json() as any;
+        // Strip HTML tags to get plain text
+        const htmlContent = data.body?.storage?.value || '';
+        const plainText = htmlContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        res.json({
+          id: data.id,
+          title: data.title,
+          content: plainText,
+          lastModified: data.version?.createdAt || '',
+        });
+      } catch (e: any) { res.status(502).json({ error: e.message }); }
+    });
+
+    // ─── Web Search Proxy ──────────────────────────────────────────────
+    apiApp.post('/integrations/web-search', async (req: any, res: any) => {
+      const { query, provider = 'duckduckgo', maxResults = 8 } = req.body;
+      const braveKey = req.headers['x-brave-api-key'] as string | undefined;
+      if (!query || typeof query !== 'string' || query.length > 500) {
+        return res.status(400).json({ error: 'Invalid or missing query' });
+      }
+
+      try {
+        if (provider === 'brave' && braveKey) {
+          // Brave Search API
+          const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${maxResults}`;
+          const r = await fetch(url, {
+            headers: { Accept: 'application/json', 'Accept-Encoding': 'gzip', 'X-Subscription-Token': braveKey },
+          });
+          if (!r.ok) throw new Error(`Brave Search: ${r.status} ${r.statusText}`);
+          const data = await r.json() as any;
+          const results = (data.web?.results || []).slice(0, maxResults).map((item: any) => ({
+            title: item.title || '',
+            url: item.url || '',
+            snippet: item.description || '',
+            source: 'brave',
+          }));
+          res.json({ results, query, provider: 'brave' });
+        } else {
+          // DuckDuckGo HTML search (no API key needed)
+          const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+          const r = await fetch(ddgUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            },
+          });
+          if (!r.ok) throw new Error(`DuckDuckGo: ${r.status}`);
+          const html = await r.text();
+
+          // Parse results from DDG HTML
+          const results: { title: string; url: string; snippet: string; source: string }[] = [];
+          const resultRegex = /<a[^>]+class="result__a"[^>]+href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
+          const snippetRegex = /<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;
+
+          const titles: { url: string; title: string }[] = [];
+          let match;
+          while ((match = resultRegex.exec(html)) !== null && titles.length < maxResults) {
+            let href = match[1];
+            // DDG wraps URLs in redirect links
+            const uddgMatch = href.match(/uddg=([^&]+)/);
+            if (uddgMatch) href = decodeURIComponent(uddgMatch[1]);
+            const title = match[2].replace(/<[^>]*>/g, '').trim();
+            if (href && title && href.startsWith('http')) {
+              titles.push({ url: href, title });
+            }
+          }
+
+          const snippets: string[] = [];
+          while ((match = snippetRegex.exec(html)) !== null) {
+            snippets.push(match[1].replace(/<[^>]*>/g, '').trim());
+          }
+
+          for (let i = 0; i < titles.length; i++) {
+            results.push({
+              title: titles[i].title,
+              url: titles[i].url,
+              snippet: snippets[i] || '',
+              source: 'duckduckgo',
+            });
+          }
+
+          res.json({ results, query, provider: 'duckduckgo' });
+        }
+      } catch (e: any) {
+        res.status(502).json({ error: e.message });
+      }
+    });
+
+    apiApp.post('/integrations/web-fetch', async (req: any, res: any) => {
+      const { url } = req.body;
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'Missing url' });
+      }
+      // Only allow http/https
+      try {
+        const parsed = new URL(url);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return res.status(400).json({ error: 'Only HTTP/HTTPS URLs allowed' });
+        }
+        // Block private/internal IPs
+        const host = parsed.hostname.toLowerCase();
+        if (host === 'localhost' || host === '127.0.0.1' || host === '::1' ||
+            /^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)/.test(host)) {
+          return res.status(400).json({ error: 'Internal URLs not allowed' });
+        }
+      } catch {
+        return res.status(400).json({ error: 'Invalid URL' });
+      }
+
+      try {
+        const r = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+          redirect: 'follow',
+          signal: AbortSignal.timeout(15000),
+        });
+        if (!r.ok) throw new Error(`Fetch failed: ${r.status}`);
+        const contentType = r.headers.get('content-type') || '';
+        if (!contentType.includes('text/') && !contentType.includes('application/json') && !contentType.includes('application/xml')) {
+          return res.json({ url, content: '[Binary content — not extractable]', contentType });
+        }
+        const html = await r.text();
+        // Strip HTML to text, keeping structure with newlines
+        const text = html
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+          .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+          .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<\/?(p|div|h[1-6]|li|tr|blockquote|pre)[^>]*>/gi, '\n')
+          .replace(/<[^>]*>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
+        // Truncate to ~30K chars to avoid token overflow
+        const truncated = text.length > 30000 ? text.substring(0, 30000) + '\n\n[...content truncated...]' : text;
+        res.json({ url, content: truncated, charCount: text.length });
+      } catch (e: any) {
+        res.status(502).json({ error: e.message });
+      }
+    });
+
     // ─── AI Chat Endpoint ───────────────────────────────────────────────
     apiApp.post('/ai/chat', async (req: any, res: any) => {
-      const { messages, snapshot, model = 'zai' } = req.body;
+      const { messages, snapshot, model = 'zai', documentContext, integrations, webSearchEnabled, webSearchProvider, braveApiKey } = req.body;
 
       let apiKey;
       let baseURL;
@@ -408,14 +715,17 @@ const apiPlugin = () => ({
       const anthropic = new Anthropic(anthropicOpts);
 
       try {
-        const systemPrompt = buildAISystemPrompt(snapshot);
+        const systemPrompt = buildAISystemPrompt(snapshot, documentContext, integrations, webSearchEnabled);
+        const allTools = webSearchEnabled
+          ? [...AI_TOOL_DEFINITIONS, ...WEB_SEARCH_TOOL_DEFINITIONS]
+          : AI_TOOL_DEFINITIONS;
 
         if (model === 'zai') {
           // z.ai uses OpenAI-compatible API
           const zaiModel = 'glm-5';
 
           // Convert Anthropic tool definitions to OpenAI format
-          const openAITools = AI_TOOL_DEFINITIONS.map(tool => ({
+          const openAITools = allTools.map(tool => ({
             type: 'function',
             function: {
               name: tool.name,
@@ -544,7 +854,7 @@ const apiPlugin = () => ({
             max_tokens: 8192,
             system: systemPrompt,
             messages,
-            tools: AI_TOOL_DEFINITIONS as any,
+            tools: allTools as any,
           });
 
           console.log('KIMI RAW RESPONSE:', JSON.stringify(response, null, 2));
@@ -571,7 +881,7 @@ const apiPlugin = () => ({
           max_tokens: 8192,
           system: systemPrompt,
           messages,
-          tools: AI_TOOL_DEFINITIONS as any,
+          tools: allTools as any,
         });
 
         // Track tool_use content blocks as they stream

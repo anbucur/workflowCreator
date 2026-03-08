@@ -1,4 +1,6 @@
 import { useInfographicStore } from '../store/useInfographicStore';
+import { useIntegrationsStore } from '../store/useIntegrationsStore';
+import { useAiChatStore } from '../store/useAiChatStore';
 import type { ToolResult } from './types';
 import type { StepType, ConnectorHandlePosition, ConnectorType } from '../types';
 
@@ -6,11 +8,11 @@ import type { StepType, ConnectorHandlePosition, ConnectorType } from '../types'
  * Executes a tool call by mapping it to the corresponding Zustand store action.
  * Returns a ToolResult with success/error info for the agentic loop.
  */
-export function executeTool(
+export async function executeTool(
   toolName: string,
   toolInput: Record<string, unknown>,
   toolUseId: string,
-): ToolResult {
+): Promise<ToolResult> {
   const store = useInfographicStore.getState();
 
   try {
@@ -236,6 +238,99 @@ export function executeTool(
         break;
       }
 
+      case 'web_search': {
+        const query = toolInput.query as string;
+        const maxResults = (toolInput.maxResults as number) || 8;
+        if (!query) {
+          return { tool_use_id: toolUseId, content: JSON.stringify({ error: 'Missing search query' }), is_error: true };
+        }
+        try {
+          const chatStore = useAiChatStore.getState();
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (chatStore.webSearchProvider === 'brave' && chatStore.braveApiKey) {
+            headers['x-brave-api-key'] = chatStore.braveApiKey;
+          }
+          const res = await fetch('/api/integrations/web-search', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              query,
+              provider: chatStore.webSearchProvider || 'duckduckgo',
+              maxResults: Math.min(maxResults, 15),
+            }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: 'Search failed' }));
+            return { tool_use_id: toolUseId, content: JSON.stringify({ error: err.error || 'Search request failed' }), is_error: true };
+          }
+          const data = await res.json();
+          result = { success: true, ...data };
+        } catch (e: any) {
+          return { tool_use_id: toolUseId, content: JSON.stringify({ error: e.message || 'Web search failed' }), is_error: true };
+        }
+        break;
+      }
+
+      case 'fetch_url_content': {
+        const url = toolInput.url as string;
+        if (!url) {
+          return { tool_use_id: toolUseId, content: JSON.stringify({ error: 'Missing URL' }), is_error: true };
+        }
+        try {
+          const res = await fetch('/api/integrations/web-fetch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: 'Fetch failed' }));
+            return { tool_use_id: toolUseId, content: JSON.stringify({ error: err.error || 'URL fetch failed' }), is_error: true };
+          }
+          const data = await res.json();
+          result = { success: true, ...data };
+        } catch (e: any) {
+          return { tool_use_id: toolUseId, content: JSON.stringify({ error: e.message || 'URL fetch failed' }), is_error: true };
+        }
+        break;
+      }
+
+      case 'fetch_integration_data': {
+        const integStore = useIntegrationsStore.getState();
+        const provider = toolInput.provider as string;
+        const dataType = (toolInput.dataType as string) || 'all';
+
+        if (!integStore.isConnected(provider)) {
+          return {
+            tool_use_id: toolUseId,
+            content: JSON.stringify({ error: `${provider} is not connected. Ask the user to connect it via the Integrations panel (plug icon in the toolbar).` }),
+            is_error: true,
+          };
+        }
+
+        const liveData = integStore.liveData;
+        if (provider === 'jira') {
+          const jiraData = liveData.jira;
+          if (!jiraData) {
+            return { tool_use_id: toolUseId, content: JSON.stringify({ error: 'No Jira data synced yet. Try syncing first.' }), is_error: true };
+          }
+          if (dataType === 'sprint') result = { success: true, data: jiraData.activeSprint || null };
+          else if (dataType === 'issues') result = { success: true, data: { open: jiraData.openIssues, done: jiraData.recentlyDone } };
+          else result = { success: true, data: jiraData };
+        } else if (provider === 'github') {
+          const ghData = liveData.github;
+          if (!ghData) {
+            return { tool_use_id: toolUseId, content: JSON.stringify({ error: 'No GitHub data synced yet. Try syncing first.' }), is_error: true };
+          }
+          if (dataType === 'releases') result = { success: true, data: ghData.releases };
+          else if (dataType === 'issues') result = { success: true, data: ghData.openIssues };
+          else if (dataType === 'workflow_runs') result = { success: true, data: ghData.workflowRuns };
+          else result = { success: true, data: ghData };
+        } else {
+          return { tool_use_id: toolUseId, content: JSON.stringify({ error: `Unknown provider: ${provider}` }), is_error: true };
+        }
+        break;
+      }
+
       default:
         return {
           tool_use_id: toolUseId,
@@ -275,6 +370,9 @@ export function getToolLabel(toolName: string, input: Record<string, unknown>): 
     case 'update_connector': return 'Updated connector';
     case 'apply_theme': return `Applied theme: ${input.themeId}`;
     case 'reset_to_default': return 'Reset to default';
+    case 'web_search': return `Searched web: "${input.query}"`;
+    case 'fetch_url_content': return `Fetched content from ${input.url}`;
+    case 'fetch_integration_data': return `Fetched ${input.provider} data${input.dataType ? ` (${input.dataType})` : ''}`;
     default: return toolName;
   }
 }

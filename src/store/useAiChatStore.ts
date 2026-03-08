@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
-import type { ChatMessage, ToolCall, SSEEvent } from '../ai/types';
+import type { ChatMessage, DocumentContext, ToolCall, SSEEvent } from '../ai/types';
 import { parseSSEStream } from '../ai/streamParser';
 import { executeTool } from '../ai/toolExecutor';
 import { useInfographicStore } from './useInfographicStore';
+import { useIntegrationsStore } from './useIntegrationsStore';
+import type { GitHubConfig, JiraConfig, ConfluenceConfig } from '../types/integrations';
 
 interface ApiContentBlock {
   type: string;
@@ -88,11 +90,23 @@ interface AiChatStore {
   apiMessages: ApiMessage[];
   isStreaming: boolean;
   error: string | null;
+  documentContext: DocumentContext | null;
+
+  // Web search
+  webSearchEnabled: boolean;
+  webSearchProvider: 'duckduckgo' | 'brave';
+  braveApiKey: string;
+  toggleWebSearch: () => void;
+  setWebSearchProvider: (provider: 'duckduckgo' | 'brave') => void;
+  setBraveApiKey: (key: string) => void;
 
   sendMessage: (text: string) => Promise<void>;
   stopGeneration: () => void;
   clearHistory: () => void;
+  regenerateLastMessage: () => Promise<void>;
   setError: (error: string | null) => void;
+  setDocumentContext: (doc: DocumentContext | null) => void;
+  clearDocumentContext: () => void;
   selectedModel: string;
   setSelectedModel: (model: string) => void;
 }
@@ -105,12 +119,68 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   apiMessages: [],
   isStreaming: false,
   error: null,
+  documentContext: null,
   selectedModel: 'zai',
+
+  // Web search state — persisted in localStorage
+  webSearchEnabled: (() => { try { return localStorage.getItem('ai-web-search') === 'true'; } catch { return false; } })(),
+  webSearchProvider: (() => { try { return (localStorage.getItem('ai-web-search-provider') as 'duckduckgo' | 'brave') || 'duckduckgo'; } catch { return 'duckduckgo' as const; } })(),
+  braveApiKey: (() => { try { return localStorage.getItem('ai-brave-api-key') || ''; } catch { return ''; } })(),
 
   setError: (error) => set({ error }),
   setSelectedModel: (model) => set({ selectedModel: model }),
+  setDocumentContext: (doc) => set({ documentContext: doc }),
+  clearDocumentContext: () => set({ documentContext: null }),
+  toggleWebSearch: () => {
+    const next = !get().webSearchEnabled;
+    try { localStorage.setItem('ai-web-search', String(next)); } catch { /* */ }
+    set({ webSearchEnabled: next });
+  },
+  setWebSearchProvider: (provider) => {
+    try { localStorage.setItem('ai-web-search-provider', provider); } catch { /* */ }
+    set({ webSearchProvider: provider });
+  },
+  setBraveApiKey: (key) => {
+    try { localStorage.setItem('ai-brave-api-key', key); } catch { /* */ }
+    set({ braveApiKey: key });
+  },
 
   clearHistory: () => set({ messages: [], apiMessages: [], error: null }),
+
+  regenerateLastMessage: async () => {
+    const { messages, apiMessages, isStreaming } = get();
+    if (isStreaming) return;
+
+    // Find the last user message
+    let lastUserIndex = -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        lastUserIndex = i;
+        break;
+      }
+    }
+    if (lastUserIndex === -1) return;
+
+    const lastUserContent = messages[lastUserIndex].content;
+
+    // Remove messages from lastUserIndex onwards (user msg + assistant response)
+    const remainingMessages = messages.slice(0, lastUserIndex);
+
+    // Roll back apiMessages: find matching user message and remove from there
+    let lastApiUserIndex = -1;
+    for (let i = apiMessages.length - 1; i >= 0; i--) {
+      if (apiMessages[i].role === 'user' && typeof apiMessages[i].content === 'string' && apiMessages[i].content === lastUserContent) {
+        lastApiUserIndex = i;
+        break;
+      }
+    }
+    const remainingApiMessages = lastApiUserIndex > 0 ? apiMessages.slice(0, lastApiUserIndex) : [];
+
+    set({ messages: remainingMessages, apiMessages: remainingApiMessages });
+
+    // Re-send the same message
+    await get().sendMessage(lastUserContent);
+  },
 
   stopGeneration: () => {
     if (currentAbortController) {
@@ -164,7 +234,26 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
         const response = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: currentApiMessages, snapshot, model: get().selectedModel }),
+          body: JSON.stringify({
+            messages: currentApiMessages,
+            snapshot,
+            model: get().selectedModel,
+            documentContext: get().documentContext,
+            webSearchEnabled: get().webSearchEnabled,
+            webSearchProvider: get().webSearchProvider,
+            braveApiKey: get().webSearchEnabled && get().webSearchProvider === 'brave' ? get().braveApiKey : undefined,
+            integrations: (() => {
+              const integ = useIntegrationsStore.getState();
+              const result: Record<string, unknown> = {};
+              const ghConn = integ.connections['github'];
+              if (ghConn) result.github = { connected: ghConn.connected, ...(ghConn.connected ? { owner: (ghConn.config as GitHubConfig).owner, repo: (ghConn.config as GitHubConfig).repo } : {}) };
+              const jiraConn = integ.connections['jira'];
+              if (jiraConn) result.jira = { connected: jiraConn.connected, ...(jiraConn.connected ? { projectKey: (jiraConn.config as JiraConfig).projectKey } : {}) };
+              const confConn = integ.connections['confluence'];
+              if (confConn) result.confluence = { connected: confConn.connected, ...(confConn.connected ? { spaceKey: (confConn.config as ConfluenceConfig).spaceKey } : {}) };
+              return Object.keys(result).length > 0 ? result : undefined;
+            })(),
+          }),
           signal, // Add abort signal
         });
 
@@ -213,7 +302,7 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
 
             case 'tool_use': {
               // Execute the tool immediately
-              const result = executeTool(sseEvent.name, sseEvent.input as Record<string, unknown>, sseEvent.id);
+              const result = await executeTool(sseEvent.name, sseEvent.input as Record<string, unknown>, sseEvent.id);
               const toolCall: ToolCall = {
                 id: sseEvent.id,
                 name: sseEvent.name,

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type {
-  IntegrationConnection, IntegrationLiveData, GitHubConfig, JiraConfig,
+  IntegrationConnection, IntegrationLiveData, GitHubConfig, JiraConfig, ConfluenceConfig, ConfluencePage,
   GitHubRelease, GitHubIssue, GitHubWorkflowRun, FeatureVerification, DeploymentStatus
 } from '../types/integrations';
 
@@ -10,16 +10,23 @@ interface IntegrationsStore {
   syncing: boolean;
   lastError: string | null;
   featureChecks: FeatureVerification[];
+  confluencePages: ConfluencePage[];
+  confluenceSpaceId: string | null;
 
   // Connect / disconnect
   connectGitHub: (config: GitHubConfig) => Promise<void>;
   connectJira: (config: JiraConfig) => Promise<void>;
+  connectConfluence: (config: ConfluenceConfig) => Promise<void>;
   disconnect: (provider: string) => void;
 
   // Sync live data
   syncGitHub: () => Promise<void>;
   syncJira: () => Promise<void>;
   syncAll: () => Promise<void>;
+
+  // Confluence
+  fetchConfluencePages: () => Promise<void>;
+  fetchConfluencePageContent: (pageId: string) => Promise<{ title: string; content: string } | null>;
 
   // AI feature verification
   verifyFeature: (feature: string) => Promise<FeatureVerification>;
@@ -28,6 +35,7 @@ interface IntegrationsStore {
   isConnected: (provider: string) => boolean;
   getGitHubConfig: () => GitHubConfig | null;
   getJiraConfig: () => JiraConfig | null;
+  getConfluenceConfig: () => ConfluenceConfig | null;
   clearError: () => void;
 }
 
@@ -52,12 +60,25 @@ async function jiraFetch(config: JiraConfig, path: string) {
   return res.json();
 }
 
+async function confluenceFetch(config: ConfluenceConfig, path: string) {
+  const res = await fetch(`/api/integrations/confluence/${path}`, {
+    headers: {
+      'x-confluence-email': config.email,
+      'x-confluence-token': config.token,
+    },
+  });
+  if (!res.ok) throw new Error(`Confluence API ${res.status}: ${res.statusText}`);
+  return res.json();
+}
+
 export const useIntegrationsStore = create<IntegrationsStore>((set, get) => ({
   connections: {},
   liveData: {},
   syncing: false,
   lastError: null,
   featureChecks: [],
+  confluencePages: [],
+  confluenceSpaceId: null,
 
   isConnected: (provider) => !!get().connections[provider]?.connected,
 
@@ -71,6 +92,12 @@ export const useIntegrationsStore = create<IntegrationsStore>((set, get) => ({
     const conn = get().connections['jira'];
     if (!conn || !conn.connected) return null;
     return conn.config as JiraConfig;
+  },
+
+  getConfluenceConfig: () => {
+    const conn = get().connections['confluence'];
+    if (!conn || !conn.connected) return null;
+    return conn.config as ConfluenceConfig;
   },
 
   clearError: () => set({ lastError: null }),
@@ -127,6 +154,72 @@ export const useIntegrationsStore = create<IntegrationsStore>((set, get) => ({
       }));
     } finally {
       set({ syncing: false });
+    }
+  },
+
+  connectConfluence: async (config) => {
+    set({ syncing: true, lastError: null });
+    try {
+      const res = await fetch('/api/integrations/confluence/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+      if (!res.ok) throw new Error('Could not verify Confluence connection');
+      const data = await res.json() as any;
+      set((s) => ({
+        connections: {
+          ...s.connections,
+          confluence: { provider: 'confluence', connected: true, config, lastSync: new Date().toISOString() },
+        },
+        confluenceSpaceId: data.id,
+      }));
+      await get().fetchConfluencePages();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Confluence connection failed';
+      set((s) => ({
+        connections: { ...s.connections, confluence: { provider: 'confluence', connected: false, config, error: msg } },
+        lastError: msg,
+      }));
+    } finally {
+      set({ syncing: false });
+    }
+  },
+
+  fetchConfluencePages: async () => {
+    const config = get().getConfluenceConfig();
+    const spaceId = get().confluenceSpaceId;
+    if (!config || !spaceId) return;
+    try {
+      const res = await fetch(`/api/integrations/confluence/pages?domain=${config.domain}&spaceId=${spaceId}`, {
+        headers: {
+          'x-confluence-email': config.email,
+          'x-confluence-token': config.token,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to fetch pages');
+      const pages = await res.json();
+      set({ confluencePages: pages });
+    } catch (e) {
+      set({ lastError: e instanceof Error ? e.message : 'Failed to fetch Confluence pages' });
+    }
+  },
+
+  fetchConfluencePageContent: async (pageId: string) => {
+    const config = get().getConfluenceConfig();
+    if (!config) return null;
+    try {
+      const res = await fetch(`/api/integrations/confluence/page/${pageId}?domain=${config.domain}`, {
+        headers: {
+          'x-confluence-email': config.email,
+          'x-confluence-token': config.token,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to fetch page content');
+      return await res.json();
+    } catch (e) {
+      set({ lastError: e instanceof Error ? e.message : 'Failed to fetch page content' });
+      return null;
     }
   },
 

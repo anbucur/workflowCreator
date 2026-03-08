@@ -321,6 +321,44 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     description: 'Reset the entire workflow to an empty default state. Use with caution — this deletes everything.',
     input_schema: { type: 'object', properties: {} },
   },
+  {
+    name: 'fetch_integration_data',
+    description: 'Fetch live data from connected integrations (Jira, GitHub). Returns sprint info, issues, releases, workflow runs, etc. Use this to populate steps with real project data.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        provider: { type: 'string', enum: ['jira', 'github'], description: 'Which integration to fetch from' },
+        dataType: { type: 'string', enum: ['sprint', 'issues', 'releases', 'workflow_runs', 'all'], description: 'Type of data to fetch. Defaults to all.' },
+      },
+      required: ['provider'],
+    },
+  },
+];
+
+export const WEB_SEARCH_TOOL_DEFINITIONS: ToolDefinition[] = [
+  {
+    name: 'web_search',
+    description: 'Search the web for information. Returns a list of results with titles, URLs, and snippets. Use this to research topics, find current data, or answer questions requiring up-to-date information.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query' },
+        maxResults: { type: 'number', description: 'Max results (default: 8, max: 15)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'fetch_url_content',
+    description: 'Fetch and extract text content from a web page URL. Use after web_search to read detailed content from a specific result.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL to fetch (must be http/https)' },
+      },
+      required: ['url'],
+    },
+  },
 ];
 
 export function buildSystemPrompt(snapshot: InfographicData): string {
@@ -328,12 +366,16 @@ export function buildSystemPrompt(snapshot: InfographicData): string {
 
 CAPABILITIES:
 - Create, update, and delete phases (workflow stages/columns)
-- Add, update, and delete steps within phases (13 specialized types available)
+- Add, update, and delete steps within phases (18 specialized types including enterprise boards)
 - Manage roles (people/teams) and assign them to steps
 - Apply visual themes (8 predefined themes)
 - Customize layout properties (gaps, fonts, shadows, patterns, colors)
 - Add connectors (visual arrows/lines) between steps
 - Set canvas and title bar properties
+- Analyze uploaded documents (TXT, MD, CSV) and Confluence pages to create workflows from their content
+- Answer questions about attached documents
+- Extract processes, checklists, and data from documents to populate workflow steps
+- Fetch live data from connected integrations (Jira, GitHub) to populate dashboards
 
 RULES:
 1. When creating content, use realistic, professional names and descriptions relevant to the user's domain.
@@ -344,6 +386,16 @@ RULES:
 6. When applying colors, use hex color codes that complement the current theme.
 7. You can execute multiple tool calls in a single response for batch changes.
 8. After making changes, briefly describe what you did.
+
+RESPONSE FORMAT:
+- Keep confirmations to 1-3 short sentences max.
+- Use markdown formatting: **bold** for emphasis, \`code\` for IDs and values.
+- When listing what you created, use a compact bulleted list — not numbered paragraphs.
+- Never repeat the user's request back to them verbatim.
+- Never include raw JSON in your text responses.
+- After executing tools, summarize the result concisely, e.g.: "Done! Created **4 phases** with **12 steps** and applied the **ocean-depth** theme."
+- When listing available options (themes, step types, etc.), use a comma-separated inline list, not a bulleted list with descriptions.
+- Use headings (##, ###) to organize longer responses when explaining multiple options or capabilities.
 
 AVAILABLE THEMES: ocean-depth, sunset-glow, forest-canopy, corporate-clean, monochrome-slate, midnight-neon, warm-earth, berry-blast
 

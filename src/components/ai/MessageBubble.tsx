@@ -1,22 +1,46 @@
 import React from 'react';
 import { getToolLabel } from '../../ai/toolExecutor';
 import type { ChatMessage, ToolCall } from '../../ai/types';
-import { Bot, User, CheckCircle2, XCircle, Wrench, Loader2, Sparkles } from 'lucide-react';
+import { Bot, User, CheckCircle2, XCircle, Wrench, Loader2, Sparkles, Copy, Check, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useThemeStore } from '../../store/useThemeStore';
+import { getMarkdownComponents } from './MarkdownComponents';
 
 interface MessageBubbleProps {
     message: ChatMessage;
     isStreaming?: boolean;
+    isLastAssistant?: boolean;
+    onRegenerate?: () => void;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isStreaming }) => {
+function formatRelativeTime(timestamp: number): string {
+    const diff = Math.floor((Date.now() - timestamp) / 1000);
+    if (diff < 10) return 'just now';
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+}
+
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isStreaming, isLastAssistant, onRegenerate }) => {
     const isUser = message.role === 'user';
     const isDarkMode = useThemeStore((s) => s.isDarkMode);
+    const [copied, setCopied] = React.useState(false);
+
+    const handleCopy = async () => {
+        if (!message.content) return;
+        try {
+            await navigator.clipboard.writeText(message.content);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch { /* clipboard not available */ }
+    };
+
+    const mdComponents = React.useMemo(() => getMarkdownComponents(isDarkMode), [isDarkMode]);
 
     return (
-        <div className={`flex gap-3 max-w-[90%] ${isUser ? 'ml-auto flex-row-reverse' : ''}`}>
+        <div className={`group flex gap-3 max-w-[90%] ${isUser ? 'ml-auto flex-row-reverse' : ''}`}>
             <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isUser ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
                 {isUser ? <User size={16} /> : <Bot size={16} />}
             </div>
@@ -35,12 +59,37 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isStreami
                                 <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                             </div>
                         ) : (
-                            <div className={`prose prose-sm max-w-none ${isUser ? 'prose-invert' : isDarkMode ? 'prose-invert prose-slate' : ''}`}>
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            <div className={`ai-prose prose prose-sm max-w-none ${isUser ? 'prose-invert' : isDarkMode ? 'prose-invert prose-slate' : ''}`}>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
                                     {message.content}
                                 </ReactMarkdown>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* Message actions — visible on hover for assistant messages */}
+                {!isUser && !isStreaming && message.content && (
+                    <div className={`flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 -mt-0.5 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                        <button
+                            onClick={handleCopy}
+                            className={`p-1 rounded transition-colors ${isDarkMode ? 'hover:bg-slate-700 hover:text-slate-300' : 'hover:bg-slate-100 hover:text-slate-600'}`}
+                            title="Copy message"
+                        >
+                            {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+                        </button>
+                        {isLastAssistant && onRegenerate && (
+                            <button
+                                onClick={onRegenerate}
+                                className={`p-1 rounded transition-colors ${isDarkMode ? 'hover:bg-slate-700 hover:text-slate-300' : 'hover:bg-slate-100 hover:text-slate-600'}`}
+                                title="Regenerate response"
+                            >
+                                <RefreshCw size={13} />
+                            </button>
+                        )}
+                        <span className={`text-[10px] ml-1 ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                            {formatRelativeTime(message.timestamp)}
+                        </span>
                     </div>
                 )}
 
