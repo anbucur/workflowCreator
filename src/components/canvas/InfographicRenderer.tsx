@@ -2,7 +2,7 @@ import React from 'react';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useUiStore } from '../../store/useUiStore';
 import { TitleBar } from './TitleBar';
-import { PhaseColumn, groupStepsIntoRows } from './PhaseColumn';
+import { PhaseColumn } from './PhaseColumn';
 import type { DropTarget } from './PhaseColumn';
 import { Plus } from 'lucide-react';
 import { ConnectorOverlay } from './ConnectorOverlay';

@@ -15,6 +15,74 @@ interface ApiMessage {
   content: string | ApiContentBlock[];
 }
 
+// Maximum number of conversation turns to keep in history
+// Each turn = user message + assistant response (potentially with tool calls)
+const MAX_HISTORY_TURNS = 10;
+
+// Rough token limit for safety (leaving room for system prompt + tools + response)
+const MAX_ESTIMATED_TOKENS = 100000;
+
+/**
+ * Estimate token count for a message (rough approximation: ~4 chars per token)
+ */
+function estimateTokens(message: ApiMessage): number {
+  const content = message.content;
+  if (typeof content === 'string') {
+    return Math.ceil(content.length / 4);
+  }
+  // For content blocks, stringify and estimate
+  return Math.ceil(JSON.stringify(content).length / 4);
+}
+
+/**
+ * Prune message history to stay within token limits.
+ * Always keeps the most recent messages. Removes from the start.
+ */
+function pruneHistory(messages: ApiMessage[], maxTokens: number): ApiMessage[] {
+  if (messages.length === 0) return messages;
+  
+  // Calculate total tokens
+  let totalTokens = messages.reduce((sum, msg) => sum + estimateTokens(msg), 0);
+  
+  if (totalTokens <= maxTokens) return messages;
+  
+  // Remove messages from the start until we're under the limit
+  // But always keep at least the last turn (user + assistant)
+  const result = [...messages];
+  while (result.length > 2 && totalTokens > maxTokens) {
+    const removed = result.shift()!;
+    totalTokens -= estimateTokens(removed);
+  }
+  
+  console.log(`[AI Chat] Pruned history from ${messages.length} to ${result.length} messages (${totalTokens} estimated tokens)`);
+  return result;
+}
+
+/**
+ * Limit history to a maximum number of turns.
+ * A "turn" is a user message followed by assistant response(s).
+ */
+function limitHistoryTurns(messages: ApiMessage[], maxTurns: number): ApiMessage[] {
+  if (messages.length <= maxTurns * 2) return messages;
+  
+  // Find user message positions (start of each turn)
+  const userMessageIndices: number[] = [];
+  messages.forEach((msg, idx) => {
+    if (msg.role === 'user') {
+      userMessageIndices.push(idx);
+    }
+  });
+  
+  // Keep only the last maxTurns turns
+  if (userMessageIndices.length <= maxTurns) return messages;
+  
+  const startIdx = userMessageIndices[userMessageIndices.length - maxTurns];
+  const result = messages.slice(startIdx);
+  
+  console.log(`[AI Chat] Limited history to ${maxTurns} turns (${result.length} messages)`);
+  return result;
+}
+
 interface AiChatStore {
   messages: ChatMessage[];
   apiMessages: ApiMessage[];
@@ -56,8 +124,13 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       error: null,
     }));
 
-    // Build API messages list
-    const newApiMessages: ApiMessage[] = [...apiMessages, { role: 'user', content: text }];
+    // Pre-prune existing history before adding new message
+    // This handles the case where history has grown too large
+    let prunedHistory = limitHistoryTurns(apiMessages, MAX_HISTORY_TURNS);
+    prunedHistory = pruneHistory(prunedHistory, MAX_ESTIMATED_TOKENS);
+
+    // Build API messages list with pruned history
+    const newApiMessages: ApiMessage[] = [...prunedHistory, { role: 'user', content: text }];
     set({ apiMessages: newApiMessages });
 
     // Start the agentic loop
@@ -191,7 +264,13 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       }
     }
 
+    // Apply history pruning to prevent token overflow
+    // 1. Limit to max turns
+    let finalMessages = limitHistoryTurns(currentApiMessages, MAX_HISTORY_TURNS);
+    // 2. Further prune by token count if needed
+    finalMessages = pruneHistory(finalMessages, MAX_ESTIMATED_TOKENS);
+
     // Done — save final API messages and stop streaming
-    set({ apiMessages: currentApiMessages, isStreaming: false });
+    set({ apiMessages: finalMessages, isStreaming: false });
   },
 }));

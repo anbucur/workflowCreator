@@ -17,7 +17,7 @@ export const MeetingContent: React.FC<Props> = ({ step }) => {
   
   return (
     <div className="space-y-2">
-      {agendaItems && agendaItems.length > 0 && (
+      {Array.isArray(agendaItems) && agendaItems.length > 0 && (
         <div className="bg-white/50 rounded-lg p-2 border border-slate-100 shadow-sm">
           <p 
             className="font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1"
