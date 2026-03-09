@@ -4,11 +4,11 @@ import {
   ArrowLeft, Play, Eye, ChevronDown, ChevronRight,
   Palette, RefreshCw, LayoutGrid, FileText, Move,
   Type, AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  LayoutTemplate, Settings2, GripVertical, EyeOff, Copy, Trash2
+  LayoutTemplate, GripVertical, EyeOff
 } from 'lucide-react';
 import { useInfographicStore } from '../store/useInfographicStore';
 import { useBrandStore } from '../store/useBrandStore';
-import { usePresentationStore, type FontConfig, type SlideConfig } from '../store/usePresentationStore';
+import { usePresentationStore, type FontConfig } from '../store/usePresentationStore';
 import { useThemeStore } from '../store/useThemeStore';
 import { ColorPicker } from '../components/shared/ColorPicker';
 import { FontSelector } from '../components/sidebar/shared/FontSelector';
@@ -39,6 +39,7 @@ const FontEditor: React.FC<{
         <FontSelector
           value={config.fontFamily}
           onChange={(font) => onChange({ ...config, fontFamily: font })}
+          label=""
         />
       </div>
       <div>
@@ -67,7 +68,7 @@ const FontEditor: React.FC<{
       <div>
         <label className="text-xs text-slate-500 mb-1 block">Color</label>
         <ColorPicker
-          value={config.color}
+          color={config.color}
           onChange={(color) => onChange({ ...config, color })}
           label=""
         />
@@ -554,7 +555,7 @@ export const PresentationConfigPage: React.FC = () => {
                             <div>
                               <label className="text-xs text-slate-500 mb-1 block">Color</label>
                               <ColorPicker
-                                value={config.header.backgroundColor}
+                                color={config.header.backgroundColor}
                                 onChange={(color) => updateHeader({ backgroundColor: color })}
                                 label=""
                               />
@@ -563,7 +564,7 @@ export const PresentationConfigPage: React.FC = () => {
                               <div>
                                 <label className="text-xs text-slate-500 mb-1 block">End Color</label>
                                 <ColorPicker
-                                  value={config.header.gradientEndColor}
+                                  color={config.header.gradientEndColor}
                                   onChange={(color) => updateHeader({ gradientEndColor: color })}
                                   label=""
                                 />
@@ -676,7 +677,7 @@ export const PresentationConfigPage: React.FC = () => {
                             <div>
                               <label className="text-xs text-slate-500 mb-1 block">Color</label>
                               <ColorPicker
-                                value={config.header.borderColor}
+                                color={config.header.borderColor}
                                 onChange={(color) => updateHeader({ borderColor: color })}
                                 label=""
                               />
@@ -724,7 +725,7 @@ export const PresentationConfigPage: React.FC = () => {
                         <div>
                           <label className="text-xs text-slate-500 mb-1 block">Background Color</label>
                           <ColorPicker
-                            value={config.footer.backgroundColor}
+                            color={config.footer.backgroundColor}
                             onChange={(color) => updateFooter({ backgroundColor: color })}
                             label=""
                           />
@@ -732,7 +733,7 @@ export const PresentationConfigPage: React.FC = () => {
                         <div>
                           <label className="text-xs text-slate-500 mb-1 block">Text Color</label>
                           <ColorPicker
-                            value={config.footer.textColor}
+                            color={config.footer.textColor}
                             onChange={(color) => updateFooter({ textColor: color })}
                             label=""
                           />
@@ -827,7 +828,7 @@ export const PresentationConfigPage: React.FC = () => {
                       {config.footer.showDivider && (
                         <div className="ml-7">
                           <ColorPicker
-                            value={config.footer.dividerColor}
+                            color={config.footer.dividerColor}
                             onChange={(color) => updateFooter({ dividerColor: color })}
                             label="Divider Color"
                           />
@@ -886,7 +887,7 @@ export const PresentationConfigPage: React.FC = () => {
                       <span className="text-sm">Title Alignment</span>
                       <AlignmentButtons
                         value={config.layout.titleAlignment}
-                        onChange={(v) => updateLayout({ titleAlignment: v })}
+                        onChange={(v) => updateLayout({ titleAlignment: v as 'left' | 'center' | 'right' })}
                         isDarkMode={isDarkMode}
                       />
                     </div>
@@ -894,7 +895,7 @@ export const PresentationConfigPage: React.FC = () => {
                       <span className="text-sm">Subtitle Alignment</span>
                       <AlignmentButtons
                         value={config.layout.subtitleAlignment}
-                        onChange={(v) => updateLayout({ subtitleAlignment: v })}
+                        onChange={(v) => updateLayout({ subtitleAlignment: v as 'left' | 'center' | 'right' })}
                         isDarkMode={isDarkMode}
                       />
                     </div>
@@ -1144,7 +1145,7 @@ export const PresentationConfigPage: React.FC = () => {
                     <div>
                       <label className="text-sm text-slate-500 mb-1 block">Primary</label>
                       <ColorPicker
-                        value={config.primaryColor}
+                        color={config.primaryColor}
                         onChange={(color) => setConfig({ primaryColor: color })}
                         label=""
                       />
@@ -1152,7 +1153,7 @@ export const PresentationConfigPage: React.FC = () => {
                     <div>
                       <label className="text-sm text-slate-500 mb-1 block">Secondary</label>
                       <ColorPicker
-                        value={config.secondaryColor}
+                        color={config.secondaryColor}
                         onChange={(color) => setConfig({ secondaryColor: color })}
                         label=""
                       />
@@ -1160,7 +1161,7 @@ export const PresentationConfigPage: React.FC = () => {
                     <div>
                       <label className="text-sm text-slate-500 mb-1 block">Accent</label>
                       <ColorPicker
-                        value={config.accentColor}
+                        color={config.accentColor}
                         onChange={(color) => setConfig({ accentColor: color })}
                         label=""
                       />
@@ -1189,13 +1190,13 @@ export const PresentationConfigPage: React.FC = () => {
                       </div>
                       <div className="flex gap-3">
                         <ColorPicker
-                          value={config.customBackground || '#1e293b'}
+                          color={config.customBackground || '#1e293b'}
                           onChange={(color) => setConfig({ customBackground: color })}
                           label="Start"
                         />
                         {config.backgroundType === 'gradient' && (
                           <ColorPicker
-                            value={config.gradientEndColor}
+                            color={config.gradientEndColor}
                             onChange={(color) => setConfig({ gradientEndColor: color })}
                             label="End"
                           />

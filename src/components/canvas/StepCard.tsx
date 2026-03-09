@@ -7,7 +7,7 @@ import { StepContentRouter } from './step-content/StepContentRouter';
 import { ConnectorHandle } from './ConnectorHandle';
 import { STEP_TYPE_LABELS } from '../../types';
 import { getContrastTextColor, getContrastMutedColor, isDarkBackground } from '../../utils/contrast';
-import { darkenColor, lightenColor, getShadowClass } from '../../utils/colors';
+import { darkenColor, getShadowClass } from '../../utils/colors';
 import { getIcon } from '../../utils/icons';
 import { CardContextMenu } from '../shared/CardContextMenu';
 import { AiEditInputDialog } from '../shared/AiEditInputDialog';

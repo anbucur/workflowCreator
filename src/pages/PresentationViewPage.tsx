@@ -340,7 +340,7 @@ const AgendaSlide: React.FC<{
   phases: Phase[];
   brand: ReturnType<typeof useBrandStore.getState>['brand'];
   config: ReturnType<typeof usePresentationStore.getState>['config'];
-}> = ({ phases, brand, config }) => {
+}> = ({ phases, config }) => {
   const colors = getThemeColors(config.theme);
   const { typography, layout, selectedPhaseIds } = config;
   const selectedPhases = phases.filter(p => selectedPhaseIds.includes(p.id));
@@ -415,7 +415,7 @@ const PhaseSlide: React.FC<{
   brand: ReturnType<typeof useBrandStore.getState>['brand'];
   config: ReturnType<typeof usePresentationStore.getState>['config'];
   roles: RoleDefinition[];
-}> = ({ slide, brand, config, roles }) => {
+}> = ({ slide, config, roles }) => {
   const { phase } = slide;
   if (!phase) return null;
 
@@ -562,7 +562,7 @@ const StepSlide: React.FC<{
   brand: ReturnType<typeof useBrandStore.getState>['brand'];
   config: ReturnType<typeof usePresentationStore.getState>['config'];
   roles: RoleDefinition[];
-}> = ({ slide, brand, config, roles }) => {
+}> = ({ slide, config, roles }) => {
   const { step, phase } = slide;
   if (!step || !phase) return null;
 
@@ -736,7 +736,7 @@ export const PresentationViewPage: React.FC<Props> = ({ onClose }) => {
   const { brand } = useBrandStore();
   const { config } = usePresentationStore();
   const [current, setCurrent] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [_isFullscreen, setIsFullscreen] = useState(false);
   const [thumbnailOpen, setThumbnailOpen] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const infographicRef = useExportStore((s) => s.infographicRef);

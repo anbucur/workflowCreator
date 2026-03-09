@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable, Plus, Bot, Moon, Sun, Wifi, Palette, CheckCircle, Link2, Presentation } from 'lucide-react';
+import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable, Plus, Bot, Moon, Sun, Wifi, Palette, CheckCircle, Link2, Presentation, Check } from 'lucide-react';
 import { useIntegrationsStore } from '../../store/useIntegrationsStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useExportStore } from '../../store/useExportStore';
@@ -14,6 +14,7 @@ import { useThemeStore } from '../../store/useThemeStore';
 import { useProjectTabsStore } from '../../store/useProjectTabsStore';
 import { ProjectTab } from '../shared/ProjectTab';
 import { captureInfographicThumbnail, createPlaceholderThumbnail } from '../../utils/thumbnail';
+import { PROJECTS_API_URL } from '../../config/constants';
 
 export const Toolbar: React.FC = () => {
     const navigate = useNavigate();
@@ -22,6 +23,7 @@ export const Toolbar: React.FC = () => {
     const [exporting, setExporting] = React.useState(false);
     const [explorerOpen, setExplorerOpen] = useState(false);
     const [shareOpen, setShareOpen] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const dropdownRef = React.useRef<HTMLDivElement>(null);
     const infographicRef = useExportStore((s) => s.infographicRef);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -195,6 +197,44 @@ export const Toolbar: React.FC = () => {
         }
     };
 
+    // Manual save to DB
+    const handleSaveProject = useCallback(async () => {
+        setSaveStatus('saving');
+        try {
+            const data = useInfographicStore.getState().getSnapshot();
+            const res = await fetch(PROJECTS_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: data.id,
+                    name: data.name || data.titleBar?.text || 'Untitled Project',
+                    data,
+                }),
+            });
+            if (!res.ok) throw new Error('Save failed');
+            setSaveStatus('saved');
+            // Mark project as clean in tabs store
+            useProjectTabsStore.getState().markDirty(data.id, false);
+            setTimeout(() => setSaveStatus('idle'), 2000);
+        } catch (e) {
+            console.error('Manual save failed', e);
+            setSaveStatus('error');
+            setTimeout(() => setSaveStatus('idle'), 3000);
+        }
+    }, []);
+
+    // Ctrl+S keyboard shortcut for save
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                handleSaveProject();
+            }
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [handleSaveProject]);
+
     // Project tabs bar (shown when multiple projects are open)
     const tabsBar = openProjects.length > 0 && (
         <div className={`flex items-center gap-1 px-4 py-1 border-b ${isDarkMode ? 'bg-slate-850 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
@@ -265,6 +305,22 @@ export const Toolbar: React.FC = () => {
                     <Database size={16} className="text-blue-500" /> Projects
                 </button>
 
+                <button
+                    onClick={handleSaveProject}
+                    disabled={saveStatus === 'saving'}
+                    className={`p-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider border ${
+                        saveStatus === 'saved'
+                            ? isDarkMode ? 'bg-green-900/30 border-green-700 text-green-400' : 'bg-green-50 border-green-300 text-green-700'
+                            : saveStatus === 'error'
+                                ? isDarkMode ? 'bg-red-900/30 border-red-700 text-red-400' : 'bg-red-50 border-red-300 text-red-700'
+                                : isDarkMode ? 'hover:bg-slate-700 text-slate-300 bg-slate-800 border-slate-700' : 'hover:bg-slate-100 text-slate-600 bg-slate-50 border-slate-200'
+                    }`}
+                    title="Save project to database (Ctrl+S)"
+                >
+                    {saveStatus === 'saved' ? <Check size={16} className="text-green-500" /> : <Save size={16} className={isDarkMode ? 'text-emerald-400' : 'text-emerald-500'} />}
+                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Error' : 'Save'}
+                </button>
+
                 <div className={`w-px h-4 mx-2 transition-colors duration-300 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
 
                 {/* AI mode toggle */}
@@ -307,7 +363,7 @@ export const Toolbar: React.FC = () => {
 
                 {/* Presentation Mode */}
                 <button
-                    onClick={() => setPresentationOpen(true)}
+                    onClick={() => navigate('/presentation/config')}
                     className={`p-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-indigo-900/30 hover:border-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-indigo-50 hover:border-indigo-200'}`}
                     title="Presentation Mode — Present as slide deck"
                 >

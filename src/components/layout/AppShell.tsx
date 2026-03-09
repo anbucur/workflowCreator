@@ -7,7 +7,7 @@ import { ProjectWizard } from '../wizard/ProjectWizard';
 import { AiChatPanel } from '../ai/AiChatPanel';
 import { IntegrationsModal } from '../integrations/IntegrationsModal';
 import { BrandKitModal } from '../branding/BrandKitModal';
-import { PresentationMode } from '../presentation/PresentationMode';
+import { PresentationViewPage } from '../../pages/PresentationViewPage';
 import { useUiStore } from '../../store/useUiStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useThemeStore } from '../../store/useThemeStore';
@@ -150,7 +150,7 @@ export const AppShell: React.FC = () => {
             )}
 
             {presentationOpen && (
-                <PresentationMode onClose={() => setPresentationOpen(false)} />
+                <PresentationViewPage onClose={() => setPresentationOpen(false)} />
             )}
         </div>
     );
