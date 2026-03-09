@@ -84,3 +84,26 @@ body,
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ─── Slide Transitions for Presentation Mode ─────────────────────── */
+.slide-enter { opacity: 0; transform: translateX(100%); }
+.slide-enter-active { opacity: 1; transform: translateX(0); transition: opacity 400ms ease-out, transform 400ms ease-out; }
+.slide-exit { opacity: 1; transform: translateX(0); }
+.slide-exit-active { opacity: 0; transform: translateX(-100%); transition: opacity 400ms ease-in, transform 400ms ease-in; }
+
+.slide-fade-enter { opacity: 0; }
+.slide-fade-enter-active { opacity: 1; transition: opacity 500ms ease-out; }
+.slide-fade-exit { opacity: 1; }
+.slide-fade-exit-active { opacity: 0; transition: opacity 300ms ease-in; }
+
+.slide-zoom-enter { opacity: 0; transform: scale(0.8); }
+.slide-zoom-enter-active { opacity: 1; transform: scale(1); transition: opacity 400ms ease-out, transform 400ms ease-out; }
+.slide-zoom-exit { opacity: 1; transform: scale(1); }
+.slide-zoom-exit-active { opacity: 0; transform: scale(1.1); transition: opacity 300ms ease-in, transform 300ms ease-in; }
+
+.slide-flip-enter { opacity: 0; transform: rotateY(-90deg); }
+.slide-flip-enter-active { opacity: 1; transform: rotateY(0); transition: opacity 500ms ease-out, transform 500ms ease-out; }
+.slide-flip-exit { opacity: 1; transform: rotateY(0); }
+.slide-flip-exit-active { opacity: 0; transform: rotateY(90deg); transition: opacity 300ms ease-in, transform 300ms ease-in; }
+
+.slide-container { perspective: 1200px; }

@@ -24,7 +24,8 @@
       "Bash(xargs grep -l \"api\\\\|endpoint\\\\|fetch\\\\|POST\")",
       "Bash(xargs grep -l \"buildSystemPrompt\\\\|TOOL_DEFINITIONS\")",
       "mcp__desktop-commander__start_search",
-      "mcp__desktop-commander__get_more_search_results"
+      "mcp__desktop-commander__get_more_search_results",
+      "Bash(npm ls @anthropic-ai/sdk)"
     ]
   }
 }

@@ -97,13 +97,12 @@ const ThemeCategoryTabs: React.FC<ThemeCategoryTabsProps> = ({ activeCategory, o
                 <button
                     key={cat.id}
                     onClick={() => onCategoryChange(cat.id)}
-                    className={`px-2 py-1 text-[10px] font-medium rounded transition-all ${
-                        activeCategory === cat.id
-                            ? 'bg-blue-500 text-white'
-                            : isDarkMode
-                                ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                    className={`px-2 py-1 text-[10px] font-medium rounded transition-all ${activeCategory === cat.id
+                        ? 'bg-blue-500 text-white'
+                        : isDarkMode
+                            ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
                 >
                     {cat.label}
                 </button>
@@ -128,11 +127,10 @@ const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => 
     return (
         <input
             {...props}
-            className={`px-3 py-2 text-sm border rounded focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
-                isDarkMode 
-                    ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder-slate-500' 
-                    : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
-            } ${props.className || ''}`}
+            className={`px-3 py-1.5 text-sm border rounded focus:outline-none focus:border-blue-500 transition-colors duration-300 ${isDarkMode
+                ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder-slate-500'
+                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                } ${props.className || ''}`}
         />
     );
 };
@@ -208,7 +206,7 @@ export const InfographicSettings: React.FC = () => {
                 </button>
 
                 {/* Category Tabs */}
-                <ThemeCategoryTabs 
+                <ThemeCategoryTabs
                     activeCategory={activeThemeCategory}
                     onCategoryChange={setActiveThemeCategory}
                 />
@@ -257,7 +255,7 @@ export const InfographicSettings: React.FC = () => {
                     />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-[1fr_68px_auto] gap-3">
                     <FontSelector
                         label="Title Font"
                         value={titleBar.titleFontFamily}
@@ -289,7 +287,7 @@ export const InfographicSettings: React.FC = () => {
                     />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-[1fr_68px_auto] gap-3">
                     <FontSelector
                         label="Subtitle Font"
                         value={titleBar.subtitleFontFamily}
@@ -526,16 +524,16 @@ export const InfographicSettings: React.FC = () => {
             {/* ============================================================ */}
             <AccordionSection id="phases" title="Phases" openSection={openSection} onToggle={toggle}>
                 {/* Phase typography */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-[1fr_68px_auto] gap-3">
                     <FontSelector
-                        label="Phase Title Font"
+                        label="Title Font"
                         value={layout.phaseTitleFontFamily}
                         onChange={(val) => updateLayout({ phaseTitleFontFamily: val })}
                     />
                     <div className="flex flex-col gap-1.5">
                         <Label>Size (px)</Label>
                         <Input
-                            title="Phase Title Size"
+                            title="Title Size"
                             type="number"
                             min={8} max={48}
                             value={layout.phaseTitleFontSize || 15}
@@ -549,16 +547,16 @@ export const InfographicSettings: React.FC = () => {
                     />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 mt-2">
+                <div className="grid grid-cols-[1fr_68px_auto] gap-3 mt-2">
                     <FontSelector
-                        label="Phase Subtitle Font"
+                        label="Subtitle Font"
                         value={layout.phaseSubtitleFontFamily}
                         onChange={(val) => updateLayout({ phaseSubtitleFontFamily: val })}
                     />
                     <div className="flex flex-col gap-1.5">
                         <Label>Size (px)</Label>
                         <Input
-                            title="Phase Subtitle Size"
+                            title="Subtitle Size"
                             type="number"
                             min={8} max={36}
                             value={layout.phaseSubtitleFontSize || 15}
@@ -752,6 +750,47 @@ export const InfographicSettings: React.FC = () => {
                     </button>
                 </div>
 
+                {/* Step Icon Color Mode */}
+                {(layout.showStepIcons ?? true) && (
+                    <div className="flex flex-col gap-1.5 mt-2">
+                        <Label>Icon Color</Label>
+                        <div className="grid grid-cols-4 gap-1">
+                            {([
+                                { value: 'phase-match', label: 'Match' },
+                                { value: 'phase-lighter', label: 'Lighter' },
+                                { value: 'phase-darker', label: 'Darker' },
+                                { value: 'custom', label: 'Custom' },
+                            ] as const).map(({ value, label }) => (
+                                <button
+                                    key={value}
+                                    title={label}
+                                    onClick={() => updateLayout({ stepIconColorMode: value })}
+                                    className={`py-1.5 text-[9px] font-bold capitalize rounded-md border transition-all ${(layout.stepIconColorMode || 'phase-match') === value ? 'bg-blue-600 text-white border-blue-600' : isDarkMode ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                        <HelperText>
+                            {layout.stepIconColorMode === 'phase-match' && 'Uses the phase color directly'}
+                            {layout.stepIconColorMode === 'phase-lighter' && 'Uses a lighter version of the phase color'}
+                            {layout.stepIconColorMode === 'phase-darker' && 'Uses a darker version of the phase color'}
+                            {layout.stepIconColorMode === 'custom' && 'Use a custom global color for all icons'}
+                            {!layout.stepIconColorMode && 'Uses the phase color directly'}
+                        </HelperText>
+
+                        {layout.stepIconColorMode === 'custom' && (
+                            <div className="mt-2">
+                                <ColorPicker
+                                    label="Custom Icon Color"
+                                    color={layout.stepIconColor ?? '#3b82f6'}
+                                    onChange={(c) => updateLayout({ stepIconColor: c })}
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* --- Typography --- */}
                 <SubSection title="Typography" />
 
@@ -787,7 +826,7 @@ export const InfographicSettings: React.FC = () => {
 
                 <div className={`mt-2 text-[10px] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Card Text Color Mode manages the overall tint, but specific colors override it.</div>
 
-                <div className="grid grid-cols-3 gap-3 mt-2 items-end">
+                <div className="grid grid-cols-[1fr_68px_auto] gap-3 mt-2 items-end">
                     <FontSelector
                         label="Card Title Font"
                         value={layout.cardTitleFontFamily}
@@ -810,7 +849,7 @@ export const InfographicSettings: React.FC = () => {
                     />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 mt-2 items-end">
+                <div className="grid grid-cols-[1fr_68px_auto] gap-3 mt-2 items-end">
                     <FontSelector
                         label="Card Body Font"
                         value={layout.cardContentFontFamily}
@@ -833,7 +872,7 @@ export const InfographicSettings: React.FC = () => {
                     />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 mt-2 items-end">
+                <div className="grid grid-cols-[1fr_68px_auto] gap-3 mt-2 items-end">
                     <FontSelector
                         label="Sub-content Font"
                         value={layout.cardSubtextFontFamily}
@@ -860,7 +899,7 @@ export const InfographicSettings: React.FC = () => {
                 {/* --- Subcontent Title Settings --- */}
                 <SubSection title="Subcontent Title Settings" />
 
-                <div className="grid grid-cols-3 gap-3 items-end">
+                <div className="grid grid-cols-[1fr_68px_auto] gap-3 items-end">
                     <FontSelector
                         label="Title Font"
                         value={layout.subcontentTitleFontFamily}
@@ -893,7 +932,7 @@ export const InfographicSettings: React.FC = () => {
                     onChange={(color) => updateLayout({ stepLabelColor: color })}
                 />
 
-                <div className="grid grid-cols-3 gap-3 mt-2 items-end">
+                <div className="grid grid-cols-[1fr_68px_auto] gap-3 mt-2 items-end">
                     <FontSelector
                         label="Label Font"
                         value={layout.stepLabelFontFamily}

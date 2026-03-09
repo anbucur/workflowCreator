@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Step, RoleDefinition, MeetingData } from '../../types';
 import { useUiStore } from '../../store/useUiStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
+import { useAiChatStore } from '../../store/useAiChatStore';
 import { StepContentRouter } from './step-content/StepContentRouter';
 import { ConnectorHandle } from './ConnectorHandle';
 import { STEP_TYPE_LABELS } from '../../types';
 import { getContrastTextColor, getContrastMutedColor, isDarkBackground } from '../../utils/contrast';
-import { darkenColor, getShadowClass } from '../../utils/colors';
+import { darkenColor, lightenColor, getShadowClass } from '../../utils/colors';
 import { getIcon } from '../../utils/icons';
+import { CardContextMenu } from '../shared/CardContextMenu';
+import { AiEditInputDialog } from '../shared/AiEditInputDialog';
 
 interface StepCardProps {
   step: Step;
@@ -22,6 +25,12 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
   const selectedElement = useUiStore((s) => s.selectedElement);
   const setSelectedElement = useUiStore((s) => s.setSelectedElement);
   const layout = useInfographicStore((s) => s.layout);
+  const setAiEditContext = useAiChatStore((s) => s.setAiEditContext);
+  const setAiPanelOpen = useUiStore((s) => s.setAiPanelOpen);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [showAiEditDialog, setShowAiEditDialog] = useState(false);
 
   const isSelected = selectedElement?.type === 'step' &&
     selectedElement.phaseId === phaseId &&
@@ -92,7 +101,73 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
 
   const autoLabelTextColor = getContrastTextColor(labelBg);
 
+  // Compute step icon color based on mode
+  const stepIconColor = React.useMemo(() => {
+    const mode = layout.stepIconColorMode || 'phase-match';
+    const basePhaseColor = phaseColor || '#3b82f6';
+    
+    switch (mode) {
+      case 'phase-match':
+        return darkenColor(basePhaseColor, 0.2);
+      case 'phase-lighter':
+        return basePhaseColor;
+      case 'phase-darker':
+        return darkenColor(basePhaseColor, 0.4);
+      case 'custom':
+        return layout.stepIconColor || '#3b82f6';
+      default:
+        return darkenColor(basePhaseColor, 0.2);
+    }
+  }, [layout.stepIconColorMode, layout.stepIconColor, phaseColor]);
+
+  // Handle right-click context menu
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  // Handle "Edit with AI" from context menu
+  const handleEditWithAi = () => {
+    setShowAiEditDialog(true);
+  };
+
+  // Handle submit from AI edit dialog
+  const handleAiEditSubmit = (stepId: string, phaseId: string, prompt: string) => {
+    setAiEditContext({
+      stepId,
+      phaseId,
+      stepTitle: step.title,
+      userPrompt: prompt,
+    });
+    setAiPanelOpen(true);
+  };
+
   return (
+    <>
+      {/* Context Menu */}
+      {contextMenu && (
+        <CardContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          stepId={step.id}
+          phaseId={phaseId}
+          stepTitle={step.title}
+          onEditWithAi={handleEditWithAi}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {/* AI Edit Dialog */}
+      <AiEditInputDialog
+        isOpen={showAiEditDialog}
+        stepTitle={step.title}
+        stepId={step.id}
+        phaseId={phaseId}
+        onSubmit={handleAiEditSubmit}
+        onClose={() => setShowAiEditDialog(false)}
+      />
+
     <div
       className={`glass h-fit flex flex-col p-3 cursor-pointer transition-all hover:-translate-y-0.5 relative group ${isSelected ? 'z-10' : ''} ${layout.cardShadow !== 'neon' ? shadowClass : ''}`}
       style={{
@@ -110,6 +185,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
         e.stopPropagation();
         setSelectedElement({ type: 'step', phaseId, stepId: step.id });
       }}
+      onContextMenu={handleContextMenu}
       data-selected={isSelected}
     >
       {/* Connector handles */}
@@ -137,7 +213,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
         )}
 
         <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-          {showIcon && iconToRender && React.createElement(iconToRender, { size: 20, style: { color: layout.stepIconColor || autoMutedColor } })}
+          {showIcon && iconToRender && React.createElement(iconToRender, { size: 20, style: { color: stepIconColor } })}
         </div>
       </div>
 
@@ -199,5 +275,6 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
         </div>
       )}
     </div>
+    </>
   );
 };

@@ -895,6 +895,7 @@ const apiPlugin = () => ({
           return;
         }
 
+        console.log(`[AI] Streaming with model=${model}, baseURL=${anthropicOpts.baseURL || 'default'}, hasAuthToken=${!!anthropicOpts.authToken}`);
         const stream = anthropic.messages.stream({
           model: model,
           max_tokens: 8192,
@@ -903,35 +904,17 @@ const apiPlugin = () => ({
           tools: allTools as any,
         });
 
-        // Track tool_use content blocks as they stream
-        let currentToolUse: { id: string; name: string; inputJson: string } | null = null;
-
-        (stream as any).on('contentBlockStart', (event: any) => {
-          if (event.contentBlock?.type === 'tool_use') {
-            currentToolUse = { id: event.contentBlock.id, name: event.contentBlock.name, inputJson: '' };
-          }
+        // Stream text deltas to the client as they arrive
+        (stream as any).on('text', (text: string) => {
+          const data = JSON.stringify({ text });
+          res.write(`event: text_delta\ndata: ${data}\n\n`);
         });
 
-        (stream as any).on('contentBlockDelta', (event: any) => {
-          if (event.delta?.type === 'text_delta') {
-            const data = JSON.stringify({ text: event.delta.text });
-            res.write(`event: text_delta\ndata: ${data}\n\n`);
-          } else if (event.delta?.type === 'input_json_delta' && currentToolUse) {
-            currentToolUse.inputJson += event.delta.partial_json;
-          }
-        });
-
-        (stream as any).on('contentBlockStop', () => {
-          if (currentToolUse) {
-            try {
-              const input = currentToolUse.inputJson ? JSON.parse(currentToolUse.inputJson) : {};
-              const data = JSON.stringify({ id: currentToolUse.id, name: currentToolUse.name, input });
-              res.write(`event: tool_use\ndata: ${data}\n\n`);
-            } catch {
-              const data = JSON.stringify({ id: currentToolUse.id, name: currentToolUse.name, input: {} });
-              res.write(`event: tool_use\ndata: ${data}\n\n`);
-            }
-            currentToolUse = null;
+        // When a full content block is done, check if it's a tool_use
+        (stream as any).on('contentBlock', (block: any) => {
+          if (block?.type === 'tool_use') {
+            const data = JSON.stringify({ id: block.id, name: block.name, input: block.input });
+            res.write(`event: tool_use\ndata: ${data}\n\n`);
           }
         });
 
@@ -940,6 +923,7 @@ const apiPlugin = () => ({
         res.write(`event: done\ndata: ${data}\n\n`);
       } catch (err: any) {
         const message = err?.message || 'Unknown AI error';
+        console.error(`[AI] Error for model=${model}:`, err?.status, message);
         res.write(`event: error\ndata: ${JSON.stringify({ message })}\n\n`);
       } finally {
         res.end();

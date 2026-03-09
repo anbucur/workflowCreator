@@ -85,12 +85,22 @@ function limitHistoryTurns(messages: ApiMessage[], maxTurns: number): ApiMessage
   return result;
 }
 
+interface AiEditContext {
+  stepId: string;
+  phaseId: string;
+  stepTitle: string;
+  userPrompt: string;
+}
+
 interface AiChatStore {
   messages: ChatMessage[];
   apiMessages: ApiMessage[];
   isStreaming: boolean;
   error: string | null;
   documentContext: DocumentContext | null;
+  aiEditContext: AiEditContext | null;
+  setAiEditContext: (ctx: AiEditContext | null) => void;
+  clearAiEditContext: () => void;
 
   // Web search
   webSearchEnabled: boolean;
@@ -120,7 +130,8 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   isStreaming: false,
   error: null,
   documentContext: null,
-  selectedModel: 'zai',
+  aiEditContext: null,
+  selectedModel: 'k2p5',
 
   // Web search state — persisted in localStorage
   webSearchEnabled: (() => { try { return localStorage.getItem('ai-web-search') === 'true'; } catch { return false; } })(),
@@ -144,6 +155,9 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     try { localStorage.setItem('ai-brave-api-key', key); } catch { /* */ }
     set({ braveApiKey: key });
   },
+
+  setAiEditContext: (ctx) => set({ aiEditContext: ctx }),
+  clearAiEditContext: () => set({ aiEditContext: null }),
 
   clearHistory: () => set({ messages: [], apiMessages: [], error: null }),
 

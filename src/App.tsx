@@ -1,11 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
+import { PresentationConfigPage } from './pages/PresentationConfigPage';
+import { PresentationViewPage } from './pages/PresentationViewPage';
+import { ExportPreviewPage } from './pages/ExportPreviewPage';
 import { useInfographicStore } from './store/useInfographicStore';
 import { useThemeStore } from './store/useThemeStore';
 import { PROJECTS_API_URL, AUTO_SAVE_DELAY } from './config/constants';
 import debounce from 'lodash.debounce';
 
-function App() {
+function AppContent() {
   const [loading, setLoading] = useState(true);
   const loadInfographic = useInfographicStore(s => s.loadInfographic);
   const isDarkMode = useThemeStore(s => s.isDarkMode);
@@ -74,7 +78,33 @@ function App() {
     );
   }
 
-  return <AppShell />;
+  return (
+    <Routes>
+      {/* Main project editor */}
+      <Route path="/" element={<AppShell />} />
+      <Route path="/project" element={<AppShell />} />
+      <Route path="/project/:id" element={<AppShell />} />
+      
+      {/* Presentation routes */}
+      <Route path="/presentation" element={<PresentationConfigPage />} />
+      <Route path="/presentation/config" element={<PresentationConfigPage />} />
+      <Route path="/present" element={<PresentationViewPage />} />
+      
+      {/* Export preview route */}
+      <Route path="/preview" element={<ExportPreviewPage />} />
+      
+      {/* Catch-all redirect to project */}
+      <Route path="*" element={<Navigate to="/project" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
 }
 
 export default App;

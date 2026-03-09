@@ -1,6 +1,8 @@
 import { toPng, toSvg } from 'html-to-image';
 import jsPDF from 'jspdf';
+import PptxGenJS from 'pptxgenjs';
 import type { ExportFormat } from '../types';
+import type { Phase } from '../types';
 
 const SHARED_OPTIONS = {
   backgroundColor: '#ffffff',
@@ -109,4 +111,275 @@ export async function generatePng(node: HTMLElement): Promise<string> {
 
 export async function generateSvg(node: HTMLElement): Promise<string> {
   return toSvg(node, SHARED_OPTIONS);
+}
+
+// ── PowerPoint (PPTX) Export ─────────────────────────────────────────────────
+
+interface PptxExportOptions {
+  title: string;
+  phases: Phase[];
+  companyName?: string;
+  logoBase64?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+}
+
+export async function exportToPptx(options: PptxExportOptions): Promise<void> {
+  const { title, phases, companyName, logoBase64, primaryColor = '#3b82f6' } = options;
+  
+  const pptx = new PptxGenJS();
+  pptx.author = companyName || 'Phasecraft';
+  pptx.title = title;
+  pptx.subject = 'Workflow Presentation';
+  
+  // Define slide layouts
+  const pptxPrimary = primaryColor.replace('#', '');
+  
+  // Slide 1: Title slide
+  const titleSlide = pptx.addSlide();
+  titleSlide.background = { color: '1e293b' };
+  
+  if (logoBase64) {
+    titleSlide.addImage({
+      data: logoBase64,
+      x: 4.0,
+      y: 1.5,
+      w: 2.0,
+      h: 1.0,
+    });
+  }
+  
+  titleSlide.addText(title, {
+    x: 0.5,
+    y: 2.5,
+    w: 9.0,
+    h: 1.5,
+    fontSize: 44,
+    fontFace: 'Arial',
+    bold: true,
+    color: 'FFFFFF',
+    align: 'center',
+  });
+  
+  if (companyName) {
+    titleSlide.addText(companyName, {
+      x: 0.5,
+      y: 4.5,
+      w: 9.0,
+      h: 0.5,
+      fontSize: 16,
+      fontFace: 'Arial',
+      color: '94a3b8',
+      align: 'center',
+    });
+  }
+  
+  // Slide 2: Agenda (if 3+ phases)
+  if (phases.length >= 3) {
+    const agendaSlide = pptx.addSlide();
+    agendaSlide.background = { color: '1e293b' };
+    
+    agendaSlide.addText('Agenda', {
+      x: 0.5,
+      y: 0.5,
+      w: 9.0,
+      h: 0.75,
+      fontSize: 32,
+      fontFace: 'Arial',
+      bold: true,
+      color: 'FFFFFF',
+    });
+    
+    phases.forEach((phase, i) => {
+      agendaSlide.addText(`${i + 1}. ${phase.title}`, {
+        x: 1.0,
+        y: 1.5 + i * 0.6,
+        w: 8.0,
+        h: 0.5,
+        fontSize: 18,
+        fontFace: 'Arial',
+        color: 'e2e8f0',
+      });
+    });
+  }
+  
+  // Phase slides
+  phases.forEach((phase, phaseIndex) => {
+    // Phase overview slide
+    const phaseSlide = pptx.addSlide();
+    phaseSlide.background = { color: '1e293b' };
+    
+    // Phase number
+    phaseSlide.addText(`Phase ${phaseIndex + 1}`, {
+      x: 0.5,
+      y: 0.3,
+      w: 9.0,
+      h: 0.4,
+      fontSize: 12,
+      fontFace: 'Arial',
+      color: '64748b',
+      bold: true,
+    });
+    
+    // Phase title
+    phaseSlide.addText(phase.title, {
+      x: 0.5,
+      y: 0.8,
+      w: 9.0,
+      h: 0.75,
+      fontSize: 32,
+      fontFace: 'Arial',
+      bold: true,
+      color: 'FFFFFF',
+    });
+    
+    // Phase subtitle
+    if (phase.subtitle) {
+      phaseSlide.addText(phase.subtitle, {
+        x: 0.5,
+        y: 1.5,
+        w: 9.0,
+        h: 0.4,
+        fontSize: 14,
+        fontFace: 'Arial',
+        color: '94a3b8',
+      });
+    }
+    
+    // Steps
+    const stepsY = phase.subtitle ? 2.2 : 1.8;
+    phase.steps.forEach((step, stepIndex) => {
+      const yPos = stepsY + stepIndex * 0.7;
+      if (yPos < 4.5) {
+        // Step bullet
+        phaseSlide.addShape(pptx.ShapeType.ellipse, {
+          x: 0.6,
+          y: yPos + 0.1,
+          w: 0.15,
+          h: 0.15,
+          fill: { color: pptxPrimary },
+        });
+        
+        // Step title
+        phaseSlide.addText(step.title, {
+          x: 1.0,
+          y: yPos,
+          w: 8.0,
+          h: 0.35,
+          fontSize: 16,
+          fontFace: 'Arial',
+          bold: true,
+          color: 'FFFFFF',
+        });
+        
+        // Step description (truncated)
+        if (step.description) {
+          phaseSlide.addText(step.description.substring(0, 80) + (step.description.length > 80 ? '...' : ''), {
+            x: 1.0,
+            y: yPos + 0.35,
+            w: 8.0,
+            h: 0.3,
+            fontSize: 11,
+            fontFace: 'Arial',
+            color: '94a3b8',
+          });
+        }
+      }
+    });
+    
+    // Individual step slides (max 5 per phase to avoid huge files)
+    phase.steps.slice(0, 5).forEach((step) => {
+      const stepSlide = pptx.addSlide();
+      stepSlide.background = { color: '1e293b' };
+      
+      // Breadcrumb
+      stepSlide.addText(`${phase.title} → ${step.title}`, {
+        x: 0.5,
+        y: 0.3,
+        w: 9.0,
+        h: 0.3,
+        fontSize: 10,
+        fontFace: 'Arial',
+        color: '64748b',
+      });
+      
+      // Step title
+      stepSlide.addText(step.title, {
+        x: 0.5,
+        y: 0.8,
+        w: 9.0,
+        h: 0.75,
+        fontSize: 28,
+        fontFace: 'Arial',
+        bold: true,
+        color: 'FFFFFF',
+      });
+      
+      // Step description
+      if (step.description) {
+        stepSlide.addText(step.description, {
+          x: 0.5,
+          y: 1.7,
+          w: 9.0,
+          h: 1.0,
+          fontSize: 14,
+          fontFace: 'Arial',
+          color: 'cbd5e1',
+        });
+      }
+      
+      // Step type badge
+      stepSlide.addShape(pptx.ShapeType.roundRect, {
+        x: 0.5,
+        y: 3.0,
+        w: 1.5,
+        h: 0.35,
+        fill: { color: pptxPrimary },
+      });
+      stepSlide.addText(step.type.toUpperCase(), {
+        x: 0.5,
+        y: 3.0,
+        w: 1.5,
+        h: 0.35,
+        fontSize: 10,
+        fontFace: 'Arial',
+        bold: true,
+        color: 'FFFFFF',
+        align: 'center',
+        valign: 'middle',
+      });
+    });
+  });
+  
+  // Thank you slide
+  const thankYouSlide = pptx.addSlide();
+  thankYouSlide.background = { color: '1e293b' };
+  
+  thankYouSlide.addText('Thank You', {
+    x: 0.5,
+    y: 2.0,
+    w: 9.0,
+    h: 1.0,
+    fontSize: 44,
+    fontFace: 'Arial',
+    bold: true,
+    color: 'FFFFFF',
+    align: 'center',
+  });
+  
+  if (companyName) {
+    thankYouSlide.addText(companyName, {
+      x: 0.5,
+      y: 3.5,
+      w: 9.0,
+      h: 0.5,
+      fontSize: 14,
+      fontFace: 'Arial',
+      color: '64748b',
+      align: 'center',
+    });
+  }
+  
+  // Save the presentation
+  await pptx.writeFile({ fileName: `${title.replace(/\s+/g, '-').toLowerCase()}-presentation.pptx` });
 }

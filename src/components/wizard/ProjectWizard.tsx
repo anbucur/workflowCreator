@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import {
   X, ArrowRight, ArrowLeft, Check, Sparkles, FileText,
-  Code2, Megaphone, Settings, Users, Palette, LayoutGrid, ChevronRight, Bot,
+  Code2, Megaphone, Settings, Users, Palette, LayoutGrid, ChevronRight, Bot, RefreshCw,
 } from 'lucide-react';
 import { WORKFLOW_TEMPLATES, WORKFLOW_CATEGORIES, type WorkflowCategory, type WorkflowTemplate } from '../../utils/templates';
 import { PREDEFINED_THEMES } from '../../utils/themes';
 import { FONT_OPTIONS } from '../sidebar/shared/FontSelector';
 import { useThemeStore } from '../../store/useThemeStore';
+import { generateProjectName } from '../../utils/nameGenerator';
 
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -41,11 +42,11 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({ onComplete, onClos
   const [creationMode, setCreationMode] = useState<CreationMode>('template');
   const [selectedCategory, setSelectedCategory] = useState<WorkflowCategory | 'all'>('all');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('blank');
-  const [projectName, setProjectName] = useState('');
+  const [projectName, setProjectName] = useState(() => generateProjectName());
   const [projectSubtitle, setProjectSubtitle] = useState('');
   const [selectedTheme, setSelectedTheme] = useState<string>('');
-  const [headingFont, setHeadingFont] = useState(`'Inter', sans-serif`);
-  const [bodyFont, setBodyFont] = useState(`'Inter', sans-serif`);
+  const [headingFont, setHeadingFont] = useState(`'Outfit', sans-serif`);
+  const [bodyFont, setBodyFont] = useState(`'Outfit', sans-serif`);
   const [aiPrompt, setAiPrompt] = useState('');
   const isDarkMode = useThemeStore((s) => s.isDarkMode);
 
@@ -269,6 +270,7 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({ onComplete, onClos
               onSubtitleChange={setProjectSubtitle}
               templateName={creationMode === 'ai' ? 'AI Generated' : template?.name || 'Blank'}
               isDarkMode={isDarkMode}
+              onRegenerateName={() => setProjectName(generateProjectName())}
             />
           )}
           {currentStep === 'theme' && (
@@ -435,7 +437,8 @@ const StepDetails: React.FC<{
   onSubtitleChange: (v: string) => void;
   templateName: string;
   isDarkMode: boolean;
-}> = ({ name, onNameChange, subtitle, onSubtitleChange, templateName, isDarkMode }) => (
+  onRegenerateName: () => void;
+}> = ({ name, onNameChange, subtitle, onSubtitleChange, templateName, isDarkMode, onRegenerateName }) => (
   <div className="flex flex-col gap-6 max-w-lg mx-auto">
     <div>
       <h3 className={`text-sm font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'} mb-1`}>Project Details</h3>
@@ -447,14 +450,24 @@ const StepDetails: React.FC<{
         <label className={`text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
           Project Name <span className="text-red-500">*</span>
         </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
-          placeholder="e.g. Q3 Product Launch"
-          className={`px-4 py-3 text-sm border ${isDarkMode ? 'border-slate-600 bg-slate-800 text-slate-100' : 'border-slate-300 bg-white text-slate-800'} rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20`}
-          autoFocus
-        />
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+            placeholder="e.g. Q3 Product Launch"
+            className={`flex-1 px-4 py-3 text-sm border ${isDarkMode ? 'border-slate-600 bg-slate-800 text-slate-100' : 'border-slate-300 bg-white text-slate-800'} rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20`}
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={onRegenerateName}
+            title="Generate a new random name"
+            className={`px-3 py-3 border ${isDarkMode ? 'border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-400' : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-500'} rounded-xl transition-colors`}
+          >
+            <RefreshCw size={14} />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">

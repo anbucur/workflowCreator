@@ -1041,6 +1041,427 @@ export const StepDataEditor: React.FC<Props> = ({ step, phaseId }) => {
                 );
             }
 
+            case 'kanban': {
+                const data = (step as any).data;
+                return (
+                    <div className="flex flex-col gap-4">
+                        {(data.columns || []).map((col: any, ci: number) => (
+                            <div key={col.id} className={`flex flex-col gap-2 p-3 rounded-lg border ${isDarkMode ? 'border-slate-600 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        value={col.color}
+                                        onChange={(e) => {
+                                            const newCols = [...data.columns];
+                                            newCols[ci] = { ...col, color: e.target.value };
+                                            updateData({ columns: newCols });
+                                        }}
+                                        className="w-6 h-6 rounded border-0 cursor-pointer"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={col.title}
+                                        onChange={(e) => {
+                                            const newCols = [...data.columns];
+                                            newCols[ci] = { ...col, title: e.target.value };
+                                            updateData({ columns: newCols });
+                                        }}
+                                        className={`flex-1 px-2 py-1.5 text-sm font-semibold border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const newCols = data.columns.filter((_: any, i: number) => i !== ci);
+                                            updateData({ columns: newCols });
+                                        }}
+                                        className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                                <label className={`text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Cards</label>
+                                {(col.cards || []).map((card: any, cdi: number) => (
+                                    <div key={card.id} className="flex items-start gap-2 pl-2">
+                                        <div className="flex-1 flex flex-col gap-1">
+                                            <input
+                                                type="text"
+                                                value={card.title}
+                                                onChange={(e) => {
+                                                    const newCols = [...data.columns];
+                                                    const newCards = [...col.cards];
+                                                    newCards[cdi] = { ...card, title: e.target.value };
+                                                    newCols[ci] = { ...col, cards: newCards };
+                                                    updateData({ columns: newCols });
+                                                }}
+                                                placeholder="Card title"
+                                                className={`px-2 py-1 text-sm border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                            />
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={card.assignee || ''}
+                                                    onChange={(e) => {
+                                                        const newCols = [...data.columns];
+                                                        const newCards = [...col.cards];
+                                                        newCards[cdi] = { ...card, assignee: e.target.value || undefined };
+                                                        newCols[ci] = { ...col, cards: newCards };
+                                                        updateData({ columns: newCols });
+                                                    }}
+                                                    placeholder="Assignee"
+                                                    className={`flex-1 px-2 py-1 text-xs border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                                />
+                                                <Dropdown
+                                                    options={[
+                                                        { value: 'low', label: 'Low' },
+                                                        { value: 'medium', label: 'Medium' },
+                                                        { value: 'high', label: 'High' },
+                                                        { value: 'critical', label: 'Critical' },
+                                                    ]}
+                                                    value={card.priority}
+                                                    onChange={(val) => {
+                                                        const newCols = [...data.columns];
+                                                        const newCards = [...col.cards];
+                                                        newCards[cdi] = { ...card, priority: val };
+                                                        newCols[ci] = { ...col, cards: newCards };
+                                                        updateData({ columns: newCols });
+                                                    }}
+                                                    className="w-24"
+                                                    placeholder="Priority"
+                                                />
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const newCols = [...data.columns];
+                                                const newCards = col.cards.filter((_: any, i: number) => i !== cdi);
+                                                newCols[ci] = { ...col, cards: newCards };
+                                                updateData({ columns: newCols });
+                                            }}
+                                            className="p-1 text-red-500 hover:bg-red-50 rounded mt-1"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+                                <button
+                                    onClick={() => {
+                                        const newCols = [...data.columns];
+                                        newCols[ci] = { ...col, cards: [...col.cards, { id: createId(), title: 'New Card', labels: [], priority: 'medium' }] };
+                                        updateData({ columns: newCols });
+                                    }}
+                                    className={`flex items-center justify-center gap-1 py-1 text-xs font-medium rounded ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'}`}
+                                >
+                                    <Plus size={12} /> Add Card
+                                </button>
+                            </div>
+                        ))}
+                        <button
+                            onClick={() => updateData({ columns: [...(data.columns || []), { id: createId(), title: 'New Column', color: '#e2e8f0', cards: [] }] })}
+                            className={`flex items-center justify-center gap-1 py-1.5 text-sm font-medium rounded ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'}`}
+                        >
+                            <Plus size={14} /> Add Column
+                        </button>
+                    </div>
+                );
+            }
+
+            case 'sprint': {
+                const data = (step as any).data;
+                return (
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-1.5">
+                            <label className={`text-xs font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Sprint Name</label>
+                            <input
+                                type="text"
+                                value={data.sprintName || ''}
+                                onChange={(e) => updateData({ sprintName: e.target.value })}
+                                className={`px-3 py-1.5 text-sm border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <div className="flex-1 flex flex-col gap-1.5">
+                                <label className={`text-xs font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Start Date</label>
+                                <input
+                                    type="date"
+                                    value={data.startDate || ''}
+                                    onChange={(e) => updateData({ startDate: e.target.value })}
+                                    className={`px-2 py-1.5 text-sm border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                />
+                            </div>
+                            <div className="flex-1 flex flex-col gap-1.5">
+                                <label className={`text-xs font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>End Date</label>
+                                <input
+                                    type="date"
+                                    value={data.endDate || ''}
+                                    onChange={(e) => updateData({ endDate: e.target.value })}
+                                    className={`px-2 py-1.5 text-sm border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className={`text-xs font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Velocity Target</label>
+                            <input
+                                type="number"
+                                value={data.velocityTarget || 0}
+                                onChange={(e) => updateData({ velocityTarget: parseInt(e.target.value) || 0 })}
+                                className={`px-3 py-1.5 text-sm border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className={`text-xs font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Stories</label>
+                            {(data.stories || []).map((story: any, i: number) => (
+                                <div key={story.id} className={`flex flex-col gap-1.5 p-2 rounded border ${isDarkMode ? 'border-slate-600 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={story.title}
+                                            onChange={(e) => {
+                                                const newStories = [...data.stories];
+                                                newStories[i] = { ...story, title: e.target.value };
+                                                updateData({ stories: newStories });
+                                            }}
+                                            placeholder="Story title"
+                                            className={`flex-1 px-2 py-1 text-sm border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                const newStories = data.stories.filter((_: any, idx: number) => idx !== i);
+                                                updateData({ stories: newStories });
+                                            }}
+                                            className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="w-16">
+                                            <label className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Points</label>
+                                            <input
+                                                type="number"
+                                                value={story.points}
+                                                onChange={(e) => {
+                                                    const newStories = [...data.stories];
+                                                    newStories[i] = { ...story, points: parseInt(e.target.value) || 0 };
+                                                    updateData({ stories: newStories });
+                                                }}
+                                                className={`w-full px-2 py-1 text-sm border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Status</label>
+                                            <Dropdown
+                                                options={[
+                                                    { value: 'todo', label: 'To Do' },
+                                                    { value: 'in_progress', label: 'In Progress' },
+                                                    { value: 'in_review', label: 'In Review' },
+                                                    { value: 'done', label: 'Done' },
+                                                ]}
+                                                value={story.status}
+                                                onChange={(val) => {
+                                                    const newStories = [...data.stories];
+                                                    newStories[i] = { ...story, status: val };
+                                                    updateData({ stories: newStories });
+                                                }}
+                                                placeholder="Status"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Assignee</label>
+                                            <input
+                                                type="text"
+                                                value={story.assignee || ''}
+                                                onChange={(e) => {
+                                                    const newStories = [...data.stories];
+                                                    newStories[i] = { ...story, assignee: e.target.value || undefined };
+                                                    updateData({ stories: newStories });
+                                                }}
+                                                placeholder="Name"
+                                                className={`w-full px-2 py-1 text-xs border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            <button
+                                onClick={() => updateData({ stories: [...(data.stories || []), { id: createId(), title: 'New Story', points: 3, status: 'todo', labels: [] }] })}
+                                className={`flex items-center justify-center gap-1 py-1.5 text-sm font-medium rounded ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'}`}
+                            >
+                                <Plus size={14} /> Add Story
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            case 'roadmap': {
+                const data = (step as any).data;
+                return (
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-1.5">
+                            <label className={`text-xs font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Quarters</label>
+                            {(data.quarters || []).map((q: string, i: number) => (
+                                <div key={i} className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={q}
+                                        onChange={(e) => {
+                                            const newQuarters = [...data.quarters];
+                                            newQuarters[i] = e.target.value;
+                                            updateData({ quarters: newQuarters });
+                                        }}
+                                        className={`flex-1 px-2 py-1.5 text-sm border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const newQuarters = data.quarters.filter((_: any, idx: number) => idx !== i);
+                                            updateData({ quarters: newQuarters });
+                                        }}
+                                        className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                onClick={() => updateData({ quarters: [...(data.quarters || []), `Q${(data.quarters?.length || 0) + 1} ${new Date().getFullYear()}`] })}
+                                className={`flex items-center justify-center gap-1 py-1 text-xs font-medium rounded ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'}`}
+                            >
+                                <Plus size={12} /> Add Quarter
+                            </button>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className={`text-xs font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Items</label>
+                            {(data.items || []).map((item: any, i: number) => (
+                                <div key={item.id} className={`flex flex-col gap-1.5 p-2 rounded border ${isDarkMode ? 'border-slate-600 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={item.title}
+                                            onChange={(e) => {
+                                                const newItems = [...data.items];
+                                                newItems[i] = { ...item, title: e.target.value };
+                                                updateData({ items: newItems });
+                                            }}
+                                            placeholder="Item title"
+                                            className={`flex-1 px-2 py-1 text-sm border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                const newItems = data.items.filter((_: any, idx: number) => idx !== i);
+                                                updateData({ items: newItems });
+                                            }}
+                                            className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                    <AutoResizeTextarea
+                                        value={item.description || ''}
+                                        onChange={(e) => {
+                                            const newItems = [...data.items];
+                                            newItems[i] = { ...item, description: e.target.value };
+                                            updateData({ items: newItems });
+                                        }}
+                                        placeholder="Description (optional)"
+                                        minRows={1}
+                                    />
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <label className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Quarter</label>
+                                            <Dropdown
+                                                options={(data.quarters || []).map((q: string) => ({ value: q, label: q }))}
+                                                value={item.quarter}
+                                                onChange={(val) => {
+                                                    const newItems = [...data.items];
+                                                    newItems[i] = { ...item, quarter: val };
+                                                    updateData({ items: newItems });
+                                                }}
+                                                placeholder="Quarter"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Type</label>
+                                            <Dropdown
+                                                options={[
+                                                    { value: 'feature', label: 'Feature' },
+                                                    { value: 'epic', label: 'Epic' },
+                                                    { value: 'initiative', label: 'Initiative' },
+                                                    { value: 'release', label: 'Release' },
+                                                    { value: 'milestone', label: 'Milestone' },
+                                                ]}
+                                                value={item.type}
+                                                onChange={(val) => {
+                                                    const newItems = [...data.items];
+                                                    newItems[i] = { ...item, type: val };
+                                                    updateData({ items: newItems });
+                                                }}
+                                                placeholder="Type"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <label className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Status</label>
+                                            <Dropdown
+                                                options={[
+                                                    { value: 'planned', label: 'Planned' },
+                                                    { value: 'in_progress', label: 'In Progress' },
+                                                    { value: 'completed', label: 'Completed' },
+                                                    { value: 'cancelled', label: 'Cancelled' },
+                                                ]}
+                                                value={item.status}
+                                                onChange={(val) => {
+                                                    const newItems = [...data.items];
+                                                    newItems[i] = { ...item, status: val };
+                                                    updateData({ items: newItems });
+                                                }}
+                                                placeholder="Status"
+                                            />
+                                        </div>
+                                        <div className="w-16">
+                                            <label className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Progress</label>
+                                            <input
+                                                type="number"
+                                                min={0}
+                                                max={100}
+                                                value={item.progress ?? 0}
+                                                onChange={(e) => {
+                                                    const newItems = [...data.items];
+                                                    newItems[i] = { ...item, progress: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) };
+                                                    updateData({ items: newItems });
+                                                }}
+                                                className={`w-full px-2 py-1 text-sm border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <label className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Team</label>
+                                            <input
+                                                type="text"
+                                                value={item.team || ''}
+                                                onChange={(e) => {
+                                                    const newItems = [...data.items];
+                                                    newItems[i] = { ...item, team: e.target.value || undefined };
+                                                    updateData({ items: newItems });
+                                                }}
+                                                placeholder="Team name"
+                                                className={`w-full px-2 py-1 text-xs border rounded ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            <button
+                                onClick={() => updateData({ items: [...(data.items || []), { id: createId(), title: 'New Item', quarter: data.quarters?.[0] || 'Q1 2025', status: 'planned', type: 'feature', progress: 0 }] })}
+                                className={`flex items-center justify-center gap-1 py-1.5 text-sm font-medium rounded ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'}`}
+                            >
+                                <Plus size={14} /> Add Item
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
             default:
                 return null;
         }

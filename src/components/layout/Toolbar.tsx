@@ -1,20 +1,27 @@
-import React, { useRef, useState } from 'react';
-import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable, Plus, Bot, Moon, Sun, Wifi, Palette, CheckCircle } from 'lucide-react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ZoomIn, ZoomOut, Undo2, Redo2, Download, ChevronDown, FileImage, FileType, FileText, MonitorPlay, FolderOpen, Save, Database, Cable, Plus, Bot, Moon, Sun, Wifi, Palette, CheckCircle, Link2, Presentation } from 'lucide-react';
 import { useIntegrationsStore } from '../../store/useIntegrationsStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useExportStore } from '../../store/useExportStore';
+import { useBrandStore } from '../../store/useBrandStore';
 import { useStore } from 'zustand';
-import { exportInfographic } from '../../utils/export';
+import { exportInfographic, exportToPptx } from '../../utils/export';
 import { ProjectExplorerModal } from './ProjectExplorerModal';
+import { ShareModal } from './ShareModal';
 import { useUiStore } from '../../store/useUiStore';
 import { useThemeStore } from '../../store/useThemeStore';
+import { useProjectTabsStore } from '../../store/useProjectTabsStore';
+import { ProjectTab } from '../shared/ProjectTab';
+import { captureInfographicThumbnail, createPlaceholderThumbnail } from '../../utils/thumbnail';
 
 export const Toolbar: React.FC = () => {
+    const navigate = useNavigate();
     const { undo, redo, pastStates, futureStates } = useStore(useInfographicStore.temporal);
     const [exportOpen, setExportOpen] = React.useState(false);
     const [exporting, setExporting] = React.useState(false);
     const [explorerOpen, setExplorerOpen] = useState(false);
-    const setPreviewOpen = useExportStore((s) => s.setPreviewOpen);
+    const [shareOpen, setShareOpen] = useState(false);
     const dropdownRef = React.useRef<HTMLDivElement>(null);
     const infographicRef = useExportStore((s) => s.infographicRef);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,12 +31,85 @@ export const Toolbar: React.FC = () => {
     const setIntegrationsOpen = useUiStore((s) => s.setIntegrationsOpen);
     const setBrandKitOpen = useUiStore((s) => s.setBrandKitOpen);
     const setPresentationOpen = useUiStore((s) => s.setPresentationOpen);
-    const projectName = useInfographicStore((s) => s.name) || '';
-    const setProjectName = useInfographicStore((s) => s.setProjectName);
+    const zoom = useUiStore((s) => s.zoom);
+    const setZoom = useUiStore((s) => s.setZoom);
+    const resetView = useUiStore((s) => s.resetView);
     const { isDarkMode, toggleDarkMode } = useThemeStore();
     const { isConnected } = useIntegrationsStore();
     const ghConnected = isConnected('github');
     const jiraConnected = isConnected('jira');
+
+    // Project tabs state
+    const openProjects = useProjectTabsStore(s => s.openProjects);
+    const activeProjectId = useProjectTabsStore(s => s.activeProjectId);
+    const openProject = useProjectTabsStore(s => s.openProject);
+    const closeProject = useProjectTabsStore(s => s.closeProject);
+    const updateThumbnail = useProjectTabsStore(s => s.updateThumbnail);
+    const loadInfographic = useInfographicStore(s => s.loadInfographic);
+    const getSnapshot = useInfographicStore(s => s.getSnapshot);
+    const currentId = useInfographicStore(s => s.id);
+
+    // Initialize first project tab when store loads (only if no tabs exist)
+    useEffect(() => {
+        if (openProjects.length === 0 && currentId) {
+            // Check if this project ID is not already being opened
+            const snapshot = getSnapshot();
+            const placeholderThumbnail = createPlaceholderThumbnail(snapshot.name || 'Untitled');
+            openProject(snapshot, placeholderThumbnail);
+        }
+    }, [currentId]); // Only run when currentId changes, not on openProjects.length
+
+    // Handle switching between project tabs
+    const handleSwitchTab = useCallback(async (projectId: string) => {
+        // Get latest state directly from store to avoid stale closures
+        const tabsState = useProjectTabsStore.getState();
+        const currentActiveId = tabsState.activeProjectId;
+        
+        if (projectId === currentActiveId) return;
+
+        // Capture current project thumbnail before switching
+        const currentThumbnail = await captureInfographicThumbnail();
+        const currentData = getSnapshot();
+
+        // Switch in tabs store
+        tabsState.switchToProject(projectId, currentData, currentThumbnail);
+
+        // Load the target project into infographic store
+        const targetProject = tabsState.openProjects.find(p => p.id === projectId);
+        if (targetProject) {
+            loadInfographic(targetProject.data);
+        }
+    }, [getSnapshot, loadInfographic]);
+
+    // Handle closing a project tab
+    const handleCloseTab = useCallback(async (e: React.MouseEvent, projectId: string) => {
+        e.stopPropagation();
+
+        const project = openProjects.find(p => p.id === projectId);
+        if (project?.isDirty) {
+            const confirm = window.confirm(`${project.name} has unsaved changes. Close anyway?`);
+            if (!confirm) return;
+        }
+
+        // If closing active project, capture thumbnail first
+        if (projectId === activeProjectId) {
+            const thumbnail = await captureInfographicThumbnail();
+            if (thumbnail) {
+                updateThumbnail(projectId, thumbnail);
+            }
+        }
+
+        closeProject(projectId);
+
+        // Load the new active project if there is one
+        const newState = useProjectTabsStore.getState();
+        if (newState.activeProjectId) {
+            const newActive = newState.openProjects.find(p => p.id === newState.activeProjectId);
+            if (newActive) {
+                loadInfographic(newActive.data);
+            }
+        }
+    }, [openProjects, activeProjectId, closeProject, updateThumbnail, loadInfographic]);
 
     // Close dropdown on outside click
     React.useEffect(() => {
@@ -64,6 +144,25 @@ export const Toolbar: React.FC = () => {
         URL.revokeObjectURL(url);
     };
 
+    const handleExportPptx = async () => {
+        setExportOpen(false);
+        setExporting(true);
+        try {
+            const state = useInfographicStore.getState();
+            const brand = useBrandStore.getState().brand;
+            await exportToPptx({
+                title: state.name || 'Untitled Project',
+                phases: state.phases,
+                companyName: brand.companyName,
+                logoBase64: brand.logoBase64,
+                primaryColor: brand.colors.primary,
+                secondaryColor: brand.colors.secondary,
+            });
+        } finally {
+            setExporting(false);
+        }
+    };
+
     const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -96,7 +195,38 @@ export const Toolbar: React.FC = () => {
         }
     };
 
+    // Project tabs bar (shown when multiple projects are open)
+    const tabsBar = openProjects.length > 0 && (
+        <div className={`flex items-center gap-1 px-4 py-1 border-b ${isDarkMode ? 'bg-slate-850 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+            <div className="flex items-center gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {openProjects.map((project) => (
+                    <ProjectTab
+                        key={project.id}
+                        project={project}
+                        isActive={project.id === activeProjectId}
+                        onSwitch={() => handleSwitchTab(project.id)}
+                        onClose={(e) => handleCloseTab(e, project.id)}
+                    />
+                ))}
+            </div>
+            {openProjects.length > 1 && (
+                <button
+                    onClick={() => {
+                        if (window.confirm('Close all open projects?')) {
+                            useProjectTabsStore.getState().closeAllProjects();
+                        }
+                    }}
+                    className={`ml-2 text-xs px-2 py-1 rounded transition-colors ${isDarkMode ? 'text-slate-400 hover:text-red-400 hover:bg-slate-700' : 'text-slate-500 hover:text-red-500 hover:bg-slate-200'}`}
+                    title="Close all projects"
+                >
+                    Close All
+                </button>
+            )}
+        </div>
+    );
+
     return (
+        <>
         <header className={`h-12 border-b flex items-center justify-between px-4 shrink-0 z-10 transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2">
                 {/* Icon mark: gradient square with 3 stacked bars */}
@@ -115,17 +245,6 @@ export const Toolbar: React.FC = () => {
                 <span className={`font-bold tracking-tight transition-colors duration-300 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`} style={{ fontSize: '15px', fontFamily: "'Inter', sans-serif", letterSpacing: '-0.01em' }}>
                     Phasecraft
                 </span>
-            </div>
-
-            <div className="flex items-center gap-1 mx-4 flex-1">
-                <input
-                    type="text"
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    placeholder="Untitled Project"
-                    title="Rename Project"
-                    className={`text-sm font-semibold bg-transparent border rounded px-2 py-1 outline-none transition-colors w-64 max-w-full ${isDarkMode ? 'text-slate-200 border-transparent hover:border-slate-600 focus:border-blue-400 focus:bg-slate-800' : 'text-slate-700 border-transparent hover:border-slate-300 focus:border-blue-500 focus:bg-white'}`}
-                />
             </div>
 
             <div className="flex items-center gap-1">
@@ -211,6 +330,16 @@ export const Toolbar: React.FC = () => {
                     Connect
                 </button>
 
+                {/* Share */}
+                <button
+                    onClick={() => setShareOpen(true)}
+                    className={`p-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-cyan-900/30 hover:border-cyan-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-cyan-50 hover:border-cyan-200'}`}
+                    title="Share Workflow — Generate a view-only link"
+                >
+                    <Link2 size={16} className={isDarkMode ? 'text-cyan-400' : 'text-cyan-500'} />
+                    Share
+                </button>
+
                 <div className={`w-px h-4 mx-2 transition-colors duration-300 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
 
                 {/* Dark mode toggle */}
@@ -261,25 +390,61 @@ export const Toolbar: React.FC = () => {
 
                 <div className={`w-px h-4 mx-1 transition-colors duration-300 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
 
-                <button className={`p-1.5 rounded transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`} title="Zoom Out">
+                <button 
+                    onClick={() => setZoom(zoom - 0.1)}
+                    className={`p-1.5 rounded transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`} 
+                    title="Zoom Out">
                     <ZoomOut size={18} />
                 </button>
-                <button className={`p-1.5 rounded transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`} title="Zoom In">
+                <input
+                    type="text"
+                    value={`${Math.round(zoom * 100)}%`}
+                    onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        if (value !== '') {
+                            const numValue = parseInt(value, 10);
+                            if (numValue >= 20 && numValue <= 200) {
+                                setZoom(numValue / 100);
+                            }
+                        }
+                    }}
+                    onBlur={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        if (value !== '') {
+                            const numValue = parseInt(value, 10);
+                            // Clamp to limits on blur
+                            const clampedValue = Math.min(200, Math.max(20, numValue));
+                            setZoom(clampedValue / 100);
+                        }
+                    }}
+                    className={`w-12 text-center text-xs font-medium border rounded px-1 py-0.5 outline-none ${isDarkMode ? 'bg-slate-700 border-slate-600 text-slate-200 focus:border-blue-500' : 'bg-white border-slate-300 text-slate-700 focus:border-blue-500'}`}
+                    title="Zoom percentage (20-200%)"
+                />
+                <button 
+                    onClick={() => setZoom(zoom + 0.1)}
+                    className={`p-1.5 rounded transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`} 
+                    title="Zoom In">
                     <ZoomIn size={18} />
+                </button>
+                <button 
+                    onClick={() => resetView()}
+                    className={`p-1.5 rounded transition-colors text-xs ${isDarkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`} 
+                    title="Reset Zoom">
+                    Reset
                 </button>
 
                 <div className={`w-px h-4 mx-1 transition-colors duration-300 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
 
                 <div className="relative" ref={dropdownRef}>
                     <button
-                        className="ml-1 bg-blue-600 text-white px-3 py-1.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-1.5 disabled:opacity-60 shadow-sm"
                         onClick={() => setExportOpen((o) => !o)}
                         disabled={exporting}
+                        className={`p-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-green-900/30 hover:border-green-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-green-50 hover:border-green-200'}`}
                         title="Export Options"
                     >
-                        <Download size={14} />
-                        {exporting ? 'Exporting…' : 'Export'}
-                        <ChevronDown size={14} className={`transition-transform duration-200 opacity-80 ${exportOpen ? 'rotate-180' : ''}`} />
+                        <Download size={16} className={isDarkMode ? 'text-green-400' : 'text-green-500'} />
+                        Export
+                        <ChevronDown size={12} className={`transition-transform duration-200 ${exportOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {exportOpen && (
@@ -310,6 +475,13 @@ export const Toolbar: React.FC = () => {
                                 <FileText size={15} className="text-red-500" />
                                 Save as PDF
                             </button>
+                            <button
+                                className={`flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors font-medium ${isDarkMode ? 'text-slate-200 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                                onClick={handleExportPptx}
+                            >
+                                <Presentation size={15} className="text-orange-500" />
+                                Export to PowerPoint
+                            </button>
 
                             <div className={`h-px my-1 mx-1 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-100'}`} />
 
@@ -317,7 +489,7 @@ export const Toolbar: React.FC = () => {
                                 className={`flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors font-semibold ${isDarkMode ? 'text-blue-400 hover:bg-blue-900/30' : 'text-blue-700 hover:bg-blue-50'}`}
                                 onClick={() => {
                                     setExportOpen(false);
-                                    setPreviewOpen(true);
+                                    navigate('/preview');
                                 }}
                             >
                                 <MonitorPlay size={15} className="text-blue-600" />
@@ -347,6 +519,9 @@ export const Toolbar: React.FC = () => {
             </div>
 
             {explorerOpen && <ProjectExplorerModal onClose={() => setExplorerOpen(false)} />}
+            {shareOpen && <ShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} isDarkMode={isDarkMode} />}
         </header>
+        {tabsBar}
+        </>
     );
 };

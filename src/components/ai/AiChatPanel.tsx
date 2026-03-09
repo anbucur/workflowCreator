@@ -71,7 +71,7 @@ const docPrompts = [
 ];
 
 export const AiChatPanel: React.FC = () => {
-    const { messages, isStreaming, error, sendMessage, stopGeneration, clearHistory, regenerateLastMessage, selectedModel, setSelectedModel, documentContext, webSearchEnabled, toggleWebSearch, webSearchProvider, setWebSearchProvider, braveApiKey, setBraveApiKey } = useAiChatStore();
+    const { messages, isStreaming, error, sendMessage, stopGeneration, clearHistory, regenerateLastMessage, selectedModel, setSelectedModel, documentContext, webSearchEnabled, toggleWebSearch, webSearchProvider, setWebSearchProvider, braveApiKey, setBraveApiKey, aiEditContext, clearAiEditContext } = useAiChatStore();
     const aiPanelOpen = useUiStore((s) => s.aiPanelOpen);
     const setAiPanelOpen = useUiStore((s) => s.setAiPanelOpen);
     const isDarkMode = useThemeStore((s) => s.isDarkMode);
@@ -87,6 +87,15 @@ export const AiChatPanel: React.FC = () => {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages, isStreaming]);
+
+    // Handle AI edit context - auto-send the message when edit context is set
+    useEffect(() => {
+        if (aiEditContext) {
+            const prompt = `Edit the step "${aiEditContext.stepTitle}" (ID: ${aiEditContext.stepId}): ${aiEditContext.userPrompt}`;
+            clearAiEditContext();
+            sendMessage(prompt);
+        }
+    }, [aiEditContext]);
 
     // Build dynamic prompt categories based on connected integrations
     const promptCategories = useMemo(() => {
@@ -171,9 +180,9 @@ export const AiChatPanel: React.FC = () => {
                         className={`text-xs border rounded px-2 py-1 focus:outline-none focus:border-purple-300 mr-1 transition-colors duration-300 ${isDarkMode ? 'border-slate-600 bg-slate-700 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600'}`}
                         title="Select AI Model"
                     >
-                        <option value="zai">z.ai (Default)</option>
-                        <option value="claude-sonnet-4-6">Claude 3.5 Sonnet</option>
-                        <option value="k2p5">Kimi (k2p5)</option>
+                        <option value="k2p5">Kimi (Default)</option>
+                        <option value="zai">z.ai</option>
+                        <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
                     </select>
                     {messages.length > 0 && (
                         <button

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { X, Clock, Trash2, Plus, MonitorPlay } from 'lucide-react';
+import { X, Clock, Trash2, Plus, MonitorPlay, ExternalLink, Check } from 'lucide-react';
 import { useInfographicStore } from '../../store/useInfographicStore';
+import { useProjectTabsStore } from '../../store/useProjectTabsStore';
+import { createPlaceholderThumbnail } from '../../utils/thumbnail';
 
 export interface ProjectEntry {
     id: string;
@@ -18,6 +20,10 @@ export const ProjectExplorerModal: React.FC<Props> = ({ onClose }) => {
     const loadInfographic = useInfographicStore(s => s.loadInfographic);
     const currentId = useInfographicStore(s => s.id);
     const resetToDefault = useInfographicStore(s => s.resetToDefault);
+    const openProjects = useProjectTabsStore(s => s.openProjects);
+    const getSnapshot = useInfographicStore(s => s.getSnapshot);
+
+    const isProjectOpen = (projectId: string) => openProjects.some(p => p.id === projectId);
 
     const fetchProjects = async () => {
         setLoading(true);
@@ -36,11 +42,47 @@ export const ProjectExplorerModal: React.FC<Props> = ({ onClose }) => {
         fetchProjects();
     }, []);
 
-    const handleLoad = async (id: string) => {
+    const handleLoad = async (id: string, openInNewTab: boolean = false) => {
         try {
             const res = await fetch(`/api/projects/${id}`);
             const data = await res.json();
-            loadInfographic(data);
+            
+            // Get latest state directly from store to avoid stale closures
+            const tabsState = useProjectTabsStore.getState();
+            const { openProjects: currentOpenProjects, openProject: openProjectFn, switchToProject: switchFn, updateProjectData } = tabsState;
+            
+            // Check if project is already open in a tab
+            const existingTab = currentOpenProjects.find(p => p.id === id);
+            
+            if (existingTab) {
+                // Project is already open - just switch to it
+                const currentData = getSnapshot();
+                const currentProject = currentOpenProjects.find(p => p.id === currentId);
+                if (currentProject) {
+                    // Update current tab data before switching
+                    updateProjectData(currentId, currentData);
+                }
+                // Switch to the existing tab
+                switchFn(id, currentData);
+                // Load the project data
+                loadInfographic(data);
+            } else if (openInNewTab || currentOpenProjects.length > 0) {
+                // Open in new tab - save current project state first
+                const currentData = getSnapshot();
+                const currentProject = currentOpenProjects.find(p => p.id === currentId);
+                if (currentProject) {
+                    // Update current tab data
+                    updateProjectData(currentId, currentData);
+                }
+                // Open in new tab
+                const thumbnail = createPlaceholderThumbnail(data.name || 'Untitled');
+                openProjectFn(data, thumbnail);
+                // Load the project data
+                loadInfographic(data);
+            } else {
+                // No tabs yet - just load the project (tab will be created by Toolbar effect)
+                loadInfographic(data);
+            }
             onClose();
         } catch (e) {
             console.error('Failed to load project', e);
@@ -101,19 +143,27 @@ export const ProjectExplorerModal: React.FC<Props> = ({ onClose }) => {
                         <div className="text-center text-slate-400 py-12">No projects found.</div>
                     ) : (
                         <div className="grid gap-3">
-                            {projects.map(p => (
+                            {projects.map(p => {
+                                const projectIsOpen = isProjectOpen(p.id);
+                                return (
                                 <div
                                     key={p.id}
                                     onClick={() => handleLoad(p.id)}
-                                    className={`bg-white border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all hover:-translate-y-0.5 shadow-sm group ${p.id === currentId ? 'border-primary ring-1 ring-primary/20' : 'border-slate-200 hover:border-slate-300'
-                                        }`}
+                                    className={`bg-white border rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all hover:-translate-y-0.5 shadow-sm group ${p.id === currentId ? 'border-primary ring-1 ring-primary/20' : 'border-slate-200 hover:border-slate-300'}`}
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className={`p-3 rounded-xl flex-shrink-0 ${p.id === currentId ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'}`}>
                                             <MonitorPlay size={20} />
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-slate-800 text-lg">{p.name || 'Untitled Project'}</h4>
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="font-bold text-slate-800 text-lg">{p.name || 'Untitled Project'}</h4>
+                                                {projectIsOpen && (
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                        <Check size={10} /> Open
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-1">
                                                 <Clock size={12} />
                                                 Last updated: {new Date(p.updated_at).toLocaleString()}
@@ -121,6 +171,16 @@ export const ProjectExplorerModal: React.FC<Props> = ({ onClose }) => {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {/* Open in new tab button */}
+                                        {p.id !== currentId && (
+                                            <button
+                                                className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                                onClick={(e) => { e.stopPropagation(); handleLoad(p.id, true); }}
+                                                title="Open in New Tab"
+                                            >
+                                                <ExternalLink size={18} />
+                                            </button>
+                                        )}
                                         {p.id !== currentId && (
                                             <button
                                                 className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -137,7 +197,7 @@ export const ProjectExplorerModal: React.FC<Props> = ({ onClose }) => {
                                         )}
                                     </div>
                                 </div>
-                            ))}
+                            );})}
                         </div>
                     )}
                 </div>

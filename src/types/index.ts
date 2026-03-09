@@ -346,6 +346,7 @@ export interface LayoutConfig {
   cardBorderWidth: number;
   cardShadow?: 'none' | 'soft' | 'medium' | 'hard' | 'neon';
   showStepIcons?: boolean;
+  stepIconColorMode?: 'phase-match' | 'phase-lighter' | 'phase-darker' | 'custom';
   stepIconColor?: string;
   phaseBackgroundPattern?: 'none' | 'dots' | 'grid' | 'diagonal';
 }
