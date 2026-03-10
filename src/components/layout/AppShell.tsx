@@ -8,6 +8,7 @@ import { AiChatPanel } from '../ai/AiChatPanel';
 import { IntegrationsModal } from '../integrations/IntegrationsModal';
 import { BrandKitModal } from '../branding/BrandKitModal';
 import { PresentationViewPage } from '../../pages/PresentationViewPage';
+import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useUiStore } from '../../store/useUiStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useThemeStore } from '../../store/useThemeStore';
@@ -97,7 +98,9 @@ export const AppShell: React.FC = () => {
                         <Sidebar />
                     </aside>
                 )}
-                <AiChatPanel />
+                <ErrorBoundary>
+                    <AiChatPanel />
+                </ErrorBoundary>
             </main>
 
             {/* Global Drag to Delete Zone — appears only in bottom third */}

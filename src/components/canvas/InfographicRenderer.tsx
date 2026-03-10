@@ -30,7 +30,8 @@ function isFullWidthStep(steps: Step[], index: number): boolean {
 }
 
 export const InfographicRenderer = React.forwardRef<HTMLDivElement>((_, _outerRef) => {
-  const { roles, phases, layout } = useInfographicStore();
+  const phases = useInfographicStore((s) => s.phases);
+  const layout = useInfographicStore((s) => s.layout);
   const setSelectedElement = useUiStore((s) => s.setSelectedElement);
   const addPhase = useInfographicStore((s) => s.addPhase);
   const removeStep = useInfographicStore((s) => s.removeStep);
@@ -244,10 +245,6 @@ export const InfographicRenderer = React.forwardRef<HTMLDivElement>((_, _outerRe
             <PhaseColumn
               key={phase.id}
               phase={phase}
-              roles={roles}
-              stepGap={layout.stepGap}
-              cornerRadius={layout.cornerRadius}
-              phaseMinWidth={layout.phaseMinWidth}
               prevPhaseColor={phases[i - 1]?.backgroundColor}
               nextPhaseColor={phases[i + 1]?.backgroundColor}
               dropTarget={dropTarget}
@@ -278,8 +275,6 @@ export const InfographicRenderer = React.forwardRef<HTMLDivElement>((_, _outerRe
             <StepCard
               step={activeStep}
               phaseId={activePhaseId!}
-              roles={roles}
-              cornerRadius={layout.cornerRadius}
               cardBackground={overlayCardBg}
               phaseColor={overlayPhase.backgroundColor}
             />

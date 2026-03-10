@@ -18,7 +18,10 @@ import { PROJECTS_API_URL } from '../../config/constants';
 
 export const Toolbar: React.FC = () => {
     const navigate = useNavigate();
-    const { undo, redo, pastStates, futureStates } = useStore(useInfographicStore.temporal);
+    const undo = useStore(useInfographicStore.temporal, (s) => s.undo);
+    const redo = useStore(useInfographicStore.temporal, (s) => s.redo);
+    const canUndo = useStore(useInfographicStore.temporal, (s) => s.pastStates.length > 0);
+    const canRedo = useStore(useInfographicStore.temporal, (s) => s.futureStates.length > 0);
     const [exportOpen, setExportOpen] = React.useState(false);
     const [exporting, setExporting] = React.useState(false);
     const [explorerOpen, setExplorerOpen] = useState(false);
@@ -32,11 +35,11 @@ export const Toolbar: React.FC = () => {
     const setWizardOpen = useUiStore((s) => s.setWizardOpen);
     const setIntegrationsOpen = useUiStore((s) => s.setIntegrationsOpen);
     const setBrandKitOpen = useUiStore((s) => s.setBrandKitOpen);
-    const setPresentationOpen = useUiStore((s) => s.setPresentationOpen);
     const zoom = useUiStore((s) => s.zoom);
     const setZoom = useUiStore((s) => s.setZoom);
     const resetView = useUiStore((s) => s.resetView);
-    const { isDarkMode, toggleDarkMode } = useThemeStore();
+    const isDarkMode = useThemeStore((s) => s.isDarkMode);
+    const toggleDarkMode = useThemeStore((s) => s.toggleDarkMode);
     const { isConnected } = useIntegrationsStore();
     const ghConnected = isConnected('github');
     const jiraConnected = isConnected('jira');
@@ -431,14 +434,14 @@ export const Toolbar: React.FC = () => {
 
                 <button
                     onClick={() => undo()}
-                    disabled={pastStates.length === 0}
+                    disabled={!canUndo}
                     className={`p-1.5 rounded transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-300 disabled:text-slate-600' : 'hover:bg-slate-100 text-slate-600 disabled:text-slate-300'} disabled:hover:bg-transparent`}
                     title="Undo">
                     <Undo2 size={18} />
                 </button>
                 <button
                     onClick={() => redo()}
-                    disabled={futureStates.length === 0}
+                    disabled={!canRedo}
                     className={`p-1.5 rounded transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-300 disabled:text-slate-600' : 'hover:bg-slate-100 text-slate-600 disabled:text-slate-300'} disabled:hover:bg-transparent`}
                     title="Redo">
                     <Redo2 size={18} />

@@ -1,13 +1,11 @@
 import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { StepCard } from './StepCard';
-import type { Step, RoleDefinition } from '../../types';
+import type { Step } from '../../types';
 
 interface DraggableStepCardProps {
   step: Step;
   phaseId: string;
-  roles: RoleDefinition[];
-  cornerRadius: number;
   cardBackground?: string;
   phaseColor?: string;
 }
@@ -15,8 +13,6 @@ interface DraggableStepCardProps {
 export const DraggableStepCard: React.FC<DraggableStepCardProps> = ({
   step,
   phaseId,
-  roles,
-  cornerRadius,
   cardBackground,
   phaseColor,
 }) => {
@@ -41,8 +37,6 @@ export const DraggableStepCard: React.FC<DraggableStepCardProps> = ({
       <StepCard
         step={step}
         phaseId={phaseId}
-        roles={roles}
-        cornerRadius={cornerRadius}
         cardBackground={cardBackground}
         phaseColor={phaseColor}
       />

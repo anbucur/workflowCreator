@@ -95,7 +95,7 @@ export const AiChatPanel: React.FC = () => {
             clearAiEditContext();
             sendMessage(prompt);
         }
-    }, [aiEditContext]);
+    }, [aiEditContext, clearAiEditContext, sendMessage]);
 
     // Build dynamic prompt categories based on connected integrations
     const promptCategories = useMemo(() => {
@@ -149,16 +149,17 @@ export const AiChatPanel: React.FC = () => {
         return cats;
     }, [jiraConnected, ghConnected, confConnected, webSearchEnabled]);
 
-    if (!aiPanelOpen) return null;
-
-    // Find the last assistant message index for the regenerate button
-    let lastAssistantIndex = -1;
-    for (let i = messages.length - 1; i >= 0; i--) {
-        if (messages[i].role === 'assistant') {
-            lastAssistantIndex = i;
-            break;
+    // Find the last assistant message index for the regenerate button (memoized)
+    const lastAssistantIndex = useMemo(() => {
+        for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role === 'assistant') {
+                return i;
+            }
         }
-    }
+        return -1;
+    }, [messages]);
+
+    if (!aiPanelOpen) return null;
 
     const handleAutoGenerate = () => {
         sendMessage('Analyze the attached document and create a comprehensive workflow infographic based on its content. Identify the key phases, steps, roles, and relationships.');

@@ -75,19 +75,19 @@ export const StepEditor: React.FC = () => {
                     />
                 </div>
 
-                {step.type === 'standard' && (
-                    <div className="flex flex-col gap-1.5">
-                        <label className={`text-xs font-medium transition-colors duration-300 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Custom Label <span className={`font-normal transition-colors duration-300 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>(optional)</span></label>
-                        <input
-                            type="text"
-                            placeholder="e.g. Meeting, Review, Sprint…"
-                            value={step.customLabel || ''}
-                            onChange={(e) => updateStep(phase.id, step.id, { customLabel: e.target.value || undefined })}
-                            className={`px-3 py-2 text-sm border rounded focus:outline-none focus:border-blue-500 transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'}`}
-                        />
-                        <p className={`text-[10px] transition-colors duration-300 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Shown as a badge in the card header</p>
-                    </div>
-                )}
+                <div className="flex flex-col gap-1.5">
+                    <label className={`text-xs font-medium transition-colors duration-300 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Custom Label <span className={`font-normal transition-colors duration-300 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>(optional)</span></label>
+                    <input
+                        type="text"
+                        placeholder={step.type === 'standard' ? 'e.g. Meeting, Review, Sprint…' : `Override "${STEP_TYPE_LABELS[step.type]}"…`}
+                        value={step.customLabel || ''}
+                        onChange={(e) => updateStep(phase.id, step.id, { customLabel: e.target.value || undefined })}
+                        className={`px-3 py-2 text-sm border rounded focus:outline-none focus:border-blue-500 transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'}`}
+                    />
+                    <p className={`text-[10px] transition-colors duration-300 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {step.type === 'standard' ? 'Shown as a badge in the card header' : `Leave empty to use default label "${STEP_TYPE_LABELS[step.type]}"`}
+                    </p>
+                </div>
 
                 <div className="flex flex-col gap-1.5">
                     <label className={`text-xs font-medium transition-colors duration-300 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Description</label>

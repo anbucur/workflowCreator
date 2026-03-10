@@ -328,6 +328,10 @@ export interface LayoutConfig {
   stepLabelFontFamily?: string;
   stepLabelFontSize?: number;
   stepLabelMatchPhase?: boolean;
+  /** Brightness adjustment for phase-matched labels (-100 to 100) */
+  stepLabelPhaseBrightness?: number;
+  /** Saturation adjustment for phase-matched labels (-100 to 100) */
+  stepLabelPhaseSaturation?: number;
 
   cardTextColorMode?: 'default' | 'high-contrast' | 'custom';
   cardTextColor?: string;

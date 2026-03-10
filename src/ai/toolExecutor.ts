@@ -1,6 +1,7 @@
 import { useInfographicStore } from '../store/useInfographicStore';
 import { useIntegrationsStore } from '../store/useIntegrationsStore';
 import { useAiChatStore } from '../store/useAiChatStore';
+import { validateToolInput } from '../schemas/toolInputs';
 import type { ToolResult } from './types';
 import type { StepType, ConnectorHandlePosition, ConnectorType } from '../types';
 
@@ -13,6 +14,12 @@ export async function executeTool(
   toolInput: Record<string, unknown>,
   toolUseId: string,
 ): Promise<ToolResult> {
+  // Validate input against schema
+  const validation = validateToolInput(toolName, toolInput);
+  if (!validation.success) {
+    return { tool_use_id: toolUseId, content: JSON.stringify({ error: validation.error }), is_error: true };
+  }
+
   const store = useInfographicStore.getState();
 
   try {

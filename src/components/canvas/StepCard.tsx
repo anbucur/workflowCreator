@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import type { Step, RoleDefinition, MeetingData } from '../../types';
 import { useUiStore } from '../../store/useUiStore';
 import { useInfographicStore } from '../../store/useInfographicStore';
@@ -7,7 +7,7 @@ import { StepContentRouter } from './step-content/StepContentRouter';
 import { ConnectorHandle } from './ConnectorHandle';
 import { STEP_TYPE_LABELS } from '../../types';
 import { getContrastTextColor, getContrastMutedColor, isDarkBackground } from '../../utils/contrast';
-import { darkenColor, getShadowClass } from '../../utils/colors';
+import { darkenColor, getShadowClass, adjustColor } from '../../utils/colors';
 import { getIcon } from '../../utils/icons';
 import { CardContextMenu } from '../shared/CardContextMenu';
 import { AiEditInputDialog } from '../shared/AiEditInputDialog';
@@ -15,13 +15,14 @@ import { AiEditInputDialog } from '../shared/AiEditInputDialog';
 interface StepCardProps {
   step: Step;
   phaseId: string;
-  roles: RoleDefinition[];
-  cornerRadius: number;
   cardBackground?: string;
   phaseColor?: string;
 }
 
-export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, cornerRadius, cardBackground, phaseColor }) => {
+export const StepCard: React.FC<StepCardProps> = memo(({ step, phaseId, cardBackground, phaseColor }) => {
+  // Read roles and cornerRadius directly from store instead of prop drilling
+  const roles = useInfographicStore((s) => s.roles);
+  const cornerRadius = useInfographicStore((s) => s.layout.cornerRadius);
   const selectedElement = useUiStore((s) => s.selectedElement);
   const setSelectedElement = useUiStore((s) => s.setSelectedElement);
   const layout = useInfographicStore((s) => s.layout);
@@ -78,9 +79,13 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
   const shadowClass = getShadowClass(layout.cardShadow || 'soft');
   const showIcon = layout.showStepIcons ?? true;
 
-  // Compute the label badge background: match-phase uses a darkened phase colour
+  // Compute the label badge background: match-phase uses phase colour with adjustable brightness/saturation
   const labelBg = layout.stepLabelMatchPhase
-    ? darkenColor(phaseColor ?? layout.stepLabelColor ?? '#3c83f6', 0.25)
+    ? adjustColor(
+        phaseColor ?? layout.stepLabelColor ?? '#3c83f6',
+        layout.stepLabelPhaseBrightness ?? -25,
+        layout.stepLabelPhaseSaturation ?? 0
+      )
     : (layout.stepLabelColor ?? '#3c83f6');
   const labelFontFamily = layout.stepLabelFontFamily || `'Inter', sans-serif`;
   const labelFontSize = layout.stepLabelFontSize ?? 10;
@@ -197,7 +202,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
       <div className="flex justify-between items-start mb-2">
         {(step.type !== 'standard' || step.customLabel) ? (
           <span
-            className="font-bold px-1.5 py-0.5 rounded uppercase tracking-widest"
+            className="font-bold px-1.5 py-0.5 rounded uppercase tracking-widest whitespace-nowrap"
             style={{
               backgroundColor: labelBg,
               color: layout.stepLabelTextColor || autoLabelTextColor,
@@ -206,7 +211,7 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
               fontSize: `${labelFontSize}px`,
             }}
           >
-            {step.type !== 'standard' ? STEP_TYPE_LABELS[step.type] : step.customLabel}
+            {step.customLabel || STEP_TYPE_LABELS[step.type]}
           </span>
         ) : (
           <span className="opacity-0 w-0 h-0" />
@@ -277,4 +282,4 @@ export const StepCard: React.FC<StepCardProps> = ({ step, phaseId, roles, corner
     </div>
     </>
   );
-};
+});

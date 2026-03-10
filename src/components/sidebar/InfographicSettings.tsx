@@ -963,10 +963,49 @@ export const InfographicSettings: React.FC = () => {
                             onChange={(e) => updateLayout({ stepLabelMatchPhase: e.target.checked })}
                             className={`rounded text-blue-500 focus:ring-blue-500 ${isDarkMode ? 'border-slate-600' : 'border-slate-300'}`}
                         />
-                        <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Match Phase colour (darkened)</span>
+                        <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Match Phase colour</span>
                     </label>
-                    <HelperText>Uses a slightly darker version of the phase colour as the label background.</HelperText>
+                    <HelperText>Uses the phase colour as the label background with adjustable brightness and saturation.</HelperText>
                 </div>
+
+                {/* Brightness and Saturation controls - only visible when Match Phase colour is enabled */}
+                {layout.stepLabelMatchPhase && (
+                    <div className="mt-3 pl-2 border-l-2 border-blue-200 dark:border-blue-800">
+                        <div className="flex flex-col gap-1.5">
+                            <div className="flex justify-between items-center">
+                                <Label>Brightness</Label>
+                                <span className="text-xs font-bold text-primary tabular-nums">{layout.stepLabelPhaseBrightness ?? -25}</span>
+                            </div>
+                            <input
+                                type="range"
+                                min={-100}
+                                max={100}
+                                value={layout.stepLabelPhaseBrightness ?? -25}
+                                onChange={(e) => updateLayout({ stepLabelPhaseBrightness: Number(e.target.value) })}
+                                className="w-full accent-primary"
+                                title="Label brightness adjustment"
+                            />
+                            <HelperText>Negative = darker, Positive = lighter</HelperText>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5 mt-3">
+                            <div className="flex justify-between items-center">
+                                <Label>Saturation</Label>
+                                <span className="text-xs font-bold text-primary tabular-nums">{layout.stepLabelPhaseSaturation ?? 0}</span>
+                            </div>
+                            <input
+                                type="range"
+                                min={-100}
+                                max={100}
+                                value={layout.stepLabelPhaseSaturation ?? 0}
+                                onChange={(e) => updateLayout({ stepLabelPhaseSaturation: Number(e.target.value) })}
+                                className="w-full accent-primary"
+                                title="Label saturation adjustment"
+                            />
+                            <HelperText>Negative = muted, Positive = more vibrant</HelperText>
+                        </div>
+                    </div>
+                )}
             </AccordionSection>
 
             {/* ============================================================ */}

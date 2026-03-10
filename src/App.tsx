@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { PresentationConfigPage } from './pages/PresentationConfigPage';
@@ -23,10 +23,9 @@ function AppContent() {
     }
   }, [isDarkMode]);
 
-  // Auto-save logic
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const saveToDb = useCallback(
-    debounce(async (data) => {
+  // Auto-save: use ref so the debounced function is stable across renders
+  const saveToDbRef = useRef(
+    debounce(async (data: { id: string; name?: string; titleBar?: { text: string } }) => {
       try {
         await fetch(PROJECTS_API_URL, {
           method: 'POST',
@@ -38,8 +37,7 @@ function AppContent() {
           })
         });
       } catch (e) { console.error('Auto-save failed', e); }
-    }, AUTO_SAVE_DELAY),
-    []
+    }, AUTO_SAVE_DELAY)
   );
 
   useEffect(() => {
@@ -64,11 +62,10 @@ function AppContent() {
   useEffect(() => {
     if (loading) return;
     const unsub = useInfographicStore.subscribe(() => {
-      // Create snapshot and save to maintain sync
-      saveToDb(useInfographicStore.getState().getSnapshot());
+      saveToDbRef.current(useInfographicStore.getState().getSnapshot());
     });
     return unsub;
-  }, [loading, saveToDb]);
+  }, [loading]);
 
   if (loading) {
     return (

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Phase, RoleDefinition, Step } from '../../types';
+import type { Phase, Step } from '../../types';
 import { useInfographicStore } from '../../store/useInfographicStore';
 import { useDroppable } from '@dnd-kit/core';
 import { useUiStore } from '../../store/useUiStore';
@@ -54,10 +54,6 @@ export interface DropTarget {
 
 interface PhaseColumnProps {
   phase: Phase;
-  roles: RoleDefinition[];
-  stepGap: number;
-  cornerRadius: number;
-  phaseMinWidth: number;
   prevPhaseColor?: string;
   nextPhaseColor?: string;
   dropTarget: DropTarget | null;
@@ -78,10 +74,6 @@ const ColumnPlaceholder: React.FC = () => (
 
 export const PhaseColumn: React.FC<PhaseColumnProps> = ({
   phase,
-  roles,
-  stepGap,
-  cornerRadius,
-  phaseMinWidth,
   prevPhaseColor,
   nextPhaseColor,
   dropTarget,
@@ -90,6 +82,11 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
   const setSelectedElement = useUiStore((s) => s.setSelectedElement);
   const addStep = useInfographicStore((s) => s.addStep);
   const layout = useInfographicStore((s) => s.layout);
+  
+  // Read these directly from store instead of prop drilling
+  const stepGap = useInfographicStore((s) => s.layout.stepGap);
+  const phaseMinWidth = useInfographicStore((s) => s.layout.phaseMinWidth);
+  
   const { phaseTintOpacity, cardTintOpacity, phaseTransitionSharpness } = layout;
 
   const cardBackground = hexMix(phase.backgroundColor, cardTintOpacity / 100);
@@ -220,8 +217,6 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
                   <DraggableStepCard
                     step={row.left}
                     phaseId={phase.id}
-                    roles={roles}
-                    cornerRadius={cornerRadius}
                     cardBackground={cardBackground}
                     phaseColor={phase.backgroundColor}
                   />
@@ -233,8 +228,6 @@ export const PhaseColumn: React.FC<PhaseColumnProps> = ({
                     <DraggableStepCard
                       step={row.right}
                       phaseId={phase.id}
-                      roles={roles}
-                      cornerRadius={cornerRadius}
                       cardBackground={cardBackground}
                       phaseColor={phase.backgroundColor}
                     />

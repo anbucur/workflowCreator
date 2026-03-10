@@ -25,7 +25,21 @@
       "Bash(xargs grep -l \"buildSystemPrompt\\\\|TOOL_DEFINITIONS\")",
       "mcp__desktop-commander__start_search",
       "mcp__desktop-commander__get_more_search_results",
-      "Bash(npm ls @anthropic-ai/sdk)"
+      "Bash(npm ls @anthropic-ai/sdk)",
+      "Bash(wc -l /c/Users/alexa/Documents/GitHub/workflowCreator/src/store/*.ts)",
+      "Bash(grep -n \"any\" /c/Users/alexa/Documents/GitHub/workflowCreator/src/store/*.ts)",
+      "Bash(find /c/Users/alexa/Documents/GitHub/workflowCreator/src -name \"*.tsx\" -exec wc -l {} +)",
+      "Bash(timeout 15 npx vite --host)",
+      "Bash(npm install express-rate-limit)",
+      "Bash(node -e \"require\\(''zod''\\)\")",
+      "Bash(timeout 12 npx vite --host)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(grep -c '</write_to_file>' src/components/sidebar/step-editors/editors/*.tsx src/components/sidebar/step-editors/StepDataEditor.tsx)",
+      "Bash(xxd src/components/sidebar/step-editors/StepDataEditor.tsx)",
+      "Bash(xxd src/components/sidebar/step-editors/editors/index.ts)",
+      "Bash(for f in src/components/sidebar/step-editors/editors/ChecklistEditor.tsx src/components/sidebar/step-editors/editors/CollaborationEditor.tsx src/components/sidebar/step-editors/editors/DocumentEditor.tsx src/components/sidebar/step-editors/editors/EstimationEditor.tsx src/components/sidebar/step-editors/editors/HandoffEditor.tsx src/components/sidebar/step-editors/editors/KanbanEditor.tsx src/components/sidebar/step-editors/editors/MeetingEditor.tsx src/components/sidebar/step-editors/editors/MetricsEditor.tsx src/components/sidebar/step-editors/editors/MilestoneEditor.tsx src/components/sidebar/step-editors/editors/ParallelEditor.tsx src/components/sidebar/step-editors/editors/RiskEditor.tsx src/components/sidebar/step-editors/editors/RoadmapEditor.tsx src/components/sidebar/step-editors/editors/SprintEditor.tsx src/components/sidebar/step-editors/editors/TimelineEditor.tsx)",
+      "Bash(do sed -i '/<\\\\/write_to_file>/d' \"$f\")",
+      "Bash(done)"
     ]
   }
 }
