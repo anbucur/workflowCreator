@@ -41,8 +41,15 @@ function AppContent() {
   );
 
   useEffect(() => {
+    // Try the live API first (dev / server mode).
+    // If it is unavailable (e.g. static GitHub Pages deployment) fall back to
+    // the pre-exported projects.json that was generated from workflow.sqlite at
+    // build time.
     fetch(PROJECTS_API_URL)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('API unavailable');
+        return res.json();
+      })
       .then(projects => {
         if (projects && projects.length > 0) {
           return fetch(`${PROJECTS_API_URL}/${projects[0].id}`).then(res => res.json());
@@ -53,9 +60,23 @@ function AppContent() {
         if (data) loadInfographic(data);
         setLoading(false);
       })
-      .catch((e) => {
-        console.warn('Backend not running or schema empty, using defaults.', e);
-        setLoading(false);
+      .catch(() => {
+        // API unavailable — try the static export bundled with the Pages build.
+        fetch(`${import.meta.env.BASE_URL}data/projects.json`)
+          .then(res => {
+            if (!res.ok) throw new Error('No static data');
+            return res.json();
+          })
+          .then((projects: Array<{ id: string; name: string; updated_at: number; data: unknown }>) => {
+            if (projects && projects.length > 0) {
+              loadInfographic(projects[0].data as Parameters<typeof loadInfographic>[0]);
+            }
+            setLoading(false);
+          })
+          .catch(() => {
+            // No static data either — start with built-in defaults.
+            setLoading(false);
+          });
       });
   }, [loadInfographic]);
 
