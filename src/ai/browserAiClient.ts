@@ -363,6 +363,17 @@ async function* parseAnthropicStream(
 
 // ─── Per-Provider Implementations ────────────────────────────────────────────
 
+/** Returns true when a fetch error message looks like a CORS / network failure. */
+function isCorsError(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes('failed to fetch') ||
+    m.includes('load failed') ||
+    m.includes('cors') ||
+    m.includes('network')
+  );
+}
+
 async function* callZaiDirectly(
   messages: AiMessage[],
   systemPrompt: string,
@@ -421,14 +432,22 @@ async function* callKimiDirectly(
   signal?: AbortSignal,
 ): AsyncGenerator<SSEEvent> {
   const apiKey = import.meta.env.VITE_KIMI_API_KEY as string;
-  const baseURL = 'https://api.kimi.com/coding';
+  // VITE_KIMI_PROXY_URL lets you route requests through a CORS-enabled reverse
+  // proxy (e.g. a Cloudflare Worker) when deploying to GitHub Pages, where the
+  // browser cannot reach api.kimi.com/coding directly due to CORS restrictions.
+  // If unset the app calls the Kimi API directly, which works when a backend
+  // server is available (local dev) but may fail from a static deployment.
+  const proxyUrl = import.meta.env.VITE_KIMI_PROXY_URL as string | undefined;
+  const baseURL = proxyUrl ? proxyUrl.replace(/\/$/, '') : 'https://api.kimi.com/coding';
 
   try {
     const response = await fetch(`${baseURL}/v1/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
+        // Use the standard Authorization header so the request is more likely
+        // to be allowed by the server's CORS preflight configuration.
+        'Authorization': `Bearer ${apiKey}`,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -459,7 +478,21 @@ async function* callKimiDirectly(
     yield { type: 'done', stop_reason: (data.stop_reason as 'end_turn' | 'tool_use') ?? 'end_turn' };
   } catch (err) {
     if (signal?.aborted) return;
-    yield { type: 'error', message: err instanceof Error ? err.message : 'Kimi request failed' };
+    // A network-level error ("Failed to fetch", "NetworkError", "Load failed")
+    // usually means CORS is blocking the request from the browser.  Guide the
+    // user to set up a CORS proxy via the KIMI_PROXY_URL repository secret.
+    const message = err instanceof Error ? err.message : 'Kimi request failed';
+    if (isCorsError(message)) {
+      yield {
+        type: 'error',
+        message:
+          'Connection to Kimi failed (CORS restriction). ' +
+          'Add a KIMI_PROXY_URL secret to your GitHub repository pointing to a CORS-enabled proxy for api.kimi.com/coding. ' +
+          'See the README for a one-minute Cloudflare Worker setup.',
+      };
+    } else {
+      yield { type: 'error', message };
+    }
   }
 }
 
@@ -511,12 +544,12 @@ async function* callAnthropicDirectly(
     if (signal?.aborted) return;
     // Give a helpful message if CORS blocks the request
     const message = err instanceof Error ? err.message : 'Anthropic request failed';
-    if (message.toLowerCase().includes('cors') || message.toLowerCase().includes('network')) {
+    if (isCorsError(message)) {
       yield {
         type: 'error',
         message:
           'Anthropic cannot be called directly from the browser (CORS). ' +
-          'Switch to the z.ai or Kimi model, or use a standard API key with a backend server. ' +
+          'Switch to the z.ai model or Kimi (with a CORS proxy — see README), or use a standard API key with a backend server. ' +
           'OAuth tokens (sk-ant-oat…) are supported directly in browsers.',
       };
     } else {
