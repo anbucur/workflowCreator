@@ -31,6 +31,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Export SQLite data for static deployment
+        run: node scripts/export-db.mjs
+
       - name: Build
         run: npm run build
 

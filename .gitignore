@@ -25,10 +25,13 @@ dist-ssr
 # Environment variables
 .env
 
-# SQLite database files
+# SQLite database files – workflow.sqlite is tracked for Pages deployment
 *.sqlite
+!workflow.sqlite
 *.sqlite3
 *.sqlite-shm
 *.sqlite-wal
-workflow.sqlite
+
+# Generated static export (produced from workflow.sqlite at build time)
+public/data/projects.json
 
