@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import type { ChatMessage, DocumentContext, ToolCall, SSEEvent } from '../ai/types';
 import { parseSSEStream } from '../ai/streamParser';
 import { executeTool } from '../ai/toolExecutor';
+import { hasBrowserApiKey, callAIDirectly } from '../ai/browserAiClient';
 import { useInfographicStore } from './useInfographicStore';
 import { useIntegrationsStore } from './useIntegrationsStore';
 import type { GitHubConfig, JiraConfig, ConfluenceConfig } from '../types/integrations';
@@ -245,40 +246,67 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       const snapshot = useInfographicStore.getState().getSnapshot();
 
       try {
-        const response = await fetch('/api/ai/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: currentApiMessages,
-            snapshot,
-            model: get().selectedModel,
-            documentContext: get().documentContext,
-            webSearchEnabled: get().webSearchEnabled,
-            webSearchProvider: get().webSearchProvider,
-            braveApiKey: get().webSearchEnabled && get().webSearchProvider === 'brave' ? get().braveApiKey : undefined,
-            integrations: (() => {
-              const integ = useIntegrationsStore.getState();
-              const result: Record<string, unknown> = {};
-              const ghConn = integ.connections['github'];
-              if (ghConn) result.github = { connected: ghConn.connected, ...(ghConn.connected ? { owner: (ghConn.config as GitHubConfig).owner, repo: (ghConn.config as GitHubConfig).repo } : {}) };
-              const jiraConn = integ.connections['jira'];
-              if (jiraConn) result.jira = { connected: jiraConn.connected, ...(jiraConn.connected ? { projectKey: (jiraConn.config as JiraConfig).projectKey } : {}) };
-              const confConn = integ.connections['confluence'];
-              if (confConn) result.confluence = { connected: confConn.connected, ...(confConn.connected ? { spaceKey: (confConn.config as ConfluenceConfig).spaceKey } : {}) };
-              return Object.keys(result).length > 0 ? result : undefined;
-            })(),
-          }),
-          signal, // Add abort signal
-        });
+        // Build integration status for this iteration
+        const integrations = (() => {
+          const integ = useIntegrationsStore.getState();
+          const result: Record<string, unknown> = {};
+          const ghConn = integ.connections['github'];
+          if (ghConn) result.github = { connected: ghConn.connected, ...(ghConn.connected ? { owner: (ghConn.config as GitHubConfig).owner, repo: (ghConn.config as GitHubConfig).repo } : {}) };
+          const jiraConn = integ.connections['jira'];
+          if (jiraConn) result.jira = { connected: jiraConn.connected, ...(jiraConn.connected ? { projectKey: (jiraConn.config as JiraConfig).projectKey } : {}) };
+          const confConn = integ.connections['confluence'];
+          if (confConn) result.confluence = { connected: confConn.connected, ...(confConn.connected ? { spaceKey: (confConn.config as ConfluenceConfig).spaceKey } : {}) };
+          return Object.keys(result).length > 0 ? result : undefined;
+        })();
 
-        // Check if request was aborted
-        if (signal.aborted) {
-          return;
+        // Choose between browser-direct API calls (GitHub Pages / static deployment)
+        // and the local Express backend (development / self-hosted).
+        const selectedModel = get().selectedModel;
+        const useBrowserClient = hasBrowserApiKey(selectedModel);
+
+        async function* getEventStream(): AsyncGenerator<SSEEvent> {
+          if (useBrowserClient) {
+            yield* callAIDirectly({
+              messages: currentApiMessages,
+              snapshot,
+              model: selectedModel,
+              documentContext: get().documentContext,
+              webSearchEnabled: get().webSearchEnabled,
+              integrations,
+              signal,
+            });
+            return;
+          }
+
+          const response = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: currentApiMessages,
+              snapshot,
+              model: selectedModel,
+              documentContext: get().documentContext,
+              webSearchEnabled: get().webSearchEnabled,
+              webSearchProvider: get().webSearchProvider,
+              braveApiKey: get().webSearchEnabled && get().webSearchProvider === 'brave' ? get().braveApiKey : undefined,
+              integrations,
+            }),
+            signal,
+          });
+
+          if (signal.aborted) return;
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({ error: 'Request failed' })) as { error?: string };
+            yield { type: 'error', message: errData.error ?? `HTTP ${response.status}` };
+            return;
+          }
+
+          yield* parseSSEStream(response);
         }
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({ error: 'Request failed' }));
-          set({ isStreaming: false, error: errData.error || `HTTP ${response.status}` });
+        // Check if request was aborted before we even start
+        if (signal.aborted) {
           return;
         }
 
@@ -299,7 +327,7 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
           }],
         }));
 
-        for await (const event of parseSSEStream(response)) {
+        for await (const event of getEventStream()) {
           const sseEvent = event as SSEEvent;
 
           switch (sseEvent.type) {
