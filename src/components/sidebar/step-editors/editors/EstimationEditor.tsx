@@ -37,11 +37,10 @@ export const EstimationEditor: React.FC<Props> = ({ step, updateData }) => {
                         <button
                             key={level}
                             onClick={() => updateData({ confidence: level })}
-                            className={`px-3 py-1 text-xs rounded capitalize ${
-                                data.confidence === level
-                                    ? level === 'high' ? 'bg-green-500 text-white' : level === 'medium' ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'
-                                    : isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600'
-                            }`}
+                            className={`px-3 py-1 text-xs rounded capitalize ${data.confidence === level
+                                ? level === 'high' ? 'bg-green-500 text-white' : level === 'medium' ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'
+                                : isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600'
+                                }`}
                         >
                             {level}
                         </button>
