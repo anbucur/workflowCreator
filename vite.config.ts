@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { apiPlugin } from './server/index.js'
 
 export default defineConfig({
+  base: '/workflowCreator/',
   plugins: [react(), tailwindcss(), apiPlugin()],
   server: {
     port: 5173,
