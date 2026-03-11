@@ -33,6 +33,10 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          VITE_KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
+          VITE_ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
