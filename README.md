@@ -13,6 +13,7 @@ A visual workflow infographic editor for creating professional, export-ready pro
 
 - [Features](#features)
 - [Getting Started](#getting-started)
+- [AI Integration & Secrets Setup](#ai-integration--secrets-setup)
 - [Step Types](#step-types)
 - [Themes](#themes)
 - [Export Formats](#export-formats)
@@ -71,6 +72,51 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. The backend
 npm run build
 npm run preview
 ```
+
+---
+
+## AI Integration & Secrets Setup
+
+The AI chat panel can call Z.AI, Kimi (Moonshot), and Anthropic Claude models. When running locally the keys are read from a `.env` file. When deployed to **GitHub Pages** there is no backend, so the deploy workflow passes them to Vite as `VITE_*` build-time variables — the app then calls the AI providers directly from the browser.
+
+### Local development
+
+Copy `.env.example` to `.env` and fill in the keys you want to use:
+
+```bash
+cp .env.example .env
+```
+
+```dotenv
+ZAI_API_KEY=your_zai_api_key_here
+KIMI_API_KEY=your_kimi_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+```
+
+The server picks these up automatically on the next `npm run dev`.
+
+### GitHub Pages deployment
+
+The GitHub Actions deploy workflow reads the same keys from **repository secrets** and exposes them to Vite so the static build can reach the AI providers directly.
+
+**How to add a secret:**
+
+1. Open your repository on GitHub.
+2. Go to **Settings → Secrets and variables → Actions**.
+3. Click **New repository secret**.
+4. Add each secret below:
+
+| Secret name | Where to get the key |
+| --- | --- |
+| `ZAI_API_KEY` | [z.ai](https://z.ai) |
+| `KIMI_API_KEY` | [platform.moonshot.cn](https://platform.moonshot.cn) |
+| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
+
+> **Note:** You only need to add the secrets for the models you intend to use. Missing keys are simply ignored — the corresponding model will be unavailable in the deployed app.
+
+> **Anthropic browser restriction:** Direct browser requests to the Anthropic API are blocked unless you use an OAuth token (a key beginning with `sk-ant-oat`). Obtain one via the [Anthropic OAuth beta](https://console.anthropic.com) if you want Claude to work on the GitHub Pages deployment.
+
+Once the secrets are saved, push to `main` (or trigger the workflow manually from **Actions → Deploy to GitHub Pages → Run workflow**) to rebuild and redeploy with the keys in place.
 
 ---
 
