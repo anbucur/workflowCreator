@@ -153,6 +153,8 @@ export function createDefaultInfographic(): InfographicData {
       subcontentTitleFontFamily: `'Outfit', sans-serif`,
       subcontentTitleFontSize: 11,
       subcontentTitleColor: '#000000',
+      cardFooterFontFamily: `'Outfit', sans-serif`,
+      cardFooterFontSize: 9,
       cardBorderStyle: 'solid',
       cardBorderWidth: 1,
       cardShadow: 'soft',

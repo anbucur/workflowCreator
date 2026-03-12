@@ -896,6 +896,25 @@ export const InfographicSettings: React.FC = () => {
                 </div>
                 <HelperText>Agenda items, track labels, action text</HelperText>
 
+                <div className="grid grid-cols-[1fr_68px] gap-3 mt-2 items-end">
+                    <FontSelector
+                        label="Participants & Duration Font"
+                        value={layout.cardFooterFontFamily}
+                        onChange={(val) => updateLayout({ cardFooterFontFamily: val })}
+                    />
+                    <div className="flex flex-col gap-1.5">
+                        <Label>Size (px)</Label>
+                        <Input
+                            title="Footer Pill Size"
+                            type="number"
+                            min={6} max={18}
+                            value={layout.cardFooterFontSize ?? 9}
+                            onChange={(e) => updateLayout({ cardFooterFontSize: Number(e.target.value) })}
+                        />
+                    </div>
+                </div>
+                <HelperText>Facilitator and duration pills at the bottom of meeting cards</HelperText>
+
                 {/* --- Subcontent Title Settings --- */}
                 <SubSection title="Subcontent Title Settings" />
 

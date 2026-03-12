@@ -43,6 +43,9 @@ export const StepCard: React.FC<StepCardProps> = memo(({ step, phaseId, cardBack
 
   const iconToRender = React.useMemo(() => getIcon(step.iconName), [step.iconName]);
 
+  const footerFontFamily = layout.cardFooterFontFamily || layout.cardContentFontFamily || `'Inter', sans-serif`;
+  const footerFontSize = layout.cardFooterFontSize ?? 9;
+
   // Extract left-side footer pills per card type
   const footerLeft = React.useMemo(() => {
     if (step.type === 'meeting') {
@@ -50,12 +53,18 @@ export const StepCard: React.FC<StepCardProps> = memo(({ step, phaseId, cardBack
       return (
         <div className="flex gap-1.5 flex-wrap items-center">
           {facilitator && (
-            <span className="flex items-center gap-1 text-[9px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-100/50 text-indigo-700 shadow-sm">
+            <span
+              className="flex items-center gap-1 font-medium px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-100/50 text-indigo-700 shadow-sm"
+              style={{ fontFamily: footerFontFamily, fontSize: `${footerFontSize}px` }}
+            >
               <span>👤</span> {facilitator}
             </span>
           )}
           {duration && (
-            <span className="flex items-center gap-1 text-[9px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100/50 text-emerald-700 shadow-sm">
+            <span
+              className="flex items-center gap-1 font-medium px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100/50 text-emerald-700 shadow-sm"
+              style={{ fontFamily: footerFontFamily, fontSize: `${footerFontSize}px` }}
+            >
               <span>⏱</span> {duration}
             </span>
           )}
@@ -63,7 +72,7 @@ export const StepCard: React.FC<StepCardProps> = memo(({ step, phaseId, cardBack
       );
     }
     return null;
-  }, [step]);
+  }, [step, footerFontFamily, footerFontSize]);
 
   const hasContent = React.useMemo(() => {
     if (step.type === 'standard') return false;
