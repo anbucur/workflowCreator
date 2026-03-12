@@ -341,6 +341,10 @@ export interface LayoutConfig {
   subcontentTitleFontSize?: number;
   subcontentTitleColor?: string;
 
+  // Footer pill settings (participants & duration)
+  cardFooterFontFamily?: string;
+  cardFooterFontSize?: number;
+
   // Global phase text color override
   useGlobalPhaseTextColor?: boolean;
   globalPhaseTextColor?: string;
