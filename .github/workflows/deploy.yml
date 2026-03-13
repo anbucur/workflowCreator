@@ -39,6 +39,7 @@ jobs:
         env:
           VITE_ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
           VITE_KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
+          VITE_KIMI_PROXY_URL: ${{ secrets.KIMI_PROXY_URL }}
           VITE_ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Upload Pages artifact

@@ -110,13 +110,74 @@ The GitHub Actions deploy workflow reads the same keys from **repository secrets
 | --- | --- |
 | `ZAI_API_KEY` | [z.ai](https://z.ai) |
 | `KIMI_API_KEY` | [platform.moonshot.cn](https://platform.moonshot.cn) |
+| `KIMI_PROXY_URL` | Your Cloudflare Worker URL — see **Kimi CORS proxy** section below |
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
 
 > **Note:** You only need to add the secrets for the models you intend to use. Missing keys are simply ignored — the corresponding model will be unavailable in the deployed app.
 
 > **Anthropic browser restriction:** Direct browser requests to the Anthropic API are blocked unless you use an OAuth token (a key beginning with `sk-ant-oat`). Obtain one via the [Anthropic OAuth beta](https://console.anthropic.com) if you want Claude to work on the GitHub Pages deployment.
 
+> **Kimi on GitHub Pages:** The Kimi coding API (`api.kimi.com/coding`) restricts direct browser access with CORS headers. Follow the **Kimi CORS proxy** steps below so your `KIMI_API_KEY` secret works from the deployed site.
+
 Once the secrets are saved, push to `main` (or trigger the workflow manually from **Actions → Deploy to GitHub Pages → Run workflow**) to rebuild and redeploy with the keys in place.
+
+---
+
+## Kimi CORS proxy (GitHub Pages only)
+
+When the app runs on GitHub Pages the browser calls the Kimi API directly, but `api.kimi.com/coding` does not send the CORS headers that browsers require for cross-origin requests. The fix is a tiny **Cloudflare Worker** that sits in front of the Kimi API and adds the missing headers. Cloudflare Workers are free for up to 100,000 requests/day and take about one minute to set up.
+
+### 1 — Create the Worker
+
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **Create**.
+2. Choose **Hello World** starter, give it any name (e.g. `kimi-proxy`), click **Deploy**.
+3. Click **Edit code**, replace the entire file with:
+
+```javascript
+export default {
+  async fetch(request) {
+    // Handle CORS preflight
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'content-type, authorization, x-api-key, anthropic-version',
+          'Access-Control-Max-Age': '86400',
+        },
+      });
+    }
+
+    // Forward the request to Kimi and return the response with CORS headers
+    const path = new URL(request.url).pathname;
+    const upstream = await fetch('https://api.kimi.com/coding' + path, {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+    });
+
+    const response = new Response(upstream.body, upstream);
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    return response;
+  },
+};
+```
+
+4. Click **Deploy**.
+5. Copy the Worker URL (e.g. `https://kimi-proxy.YOUR-SUBDOMAIN.workers.dev`).
+
+### 2 — Add the Worker URL as a GitHub secret
+
+In your repository go to **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret name | Value |
+| --- | --- |
+| `KIMI_PROXY_URL` | `https://kimi-proxy.YOUR-SUBDOMAIN.workers.dev` |
+
+### 3 — Redeploy
+
+Push to `main` or run the workflow manually. The build will embed `KIMI_PROXY_URL` so all Kimi requests from the browser go through your proxy instead of directly to `api.kimi.com`.
 
 ---
 
