@@ -11,7 +11,7 @@ async function testAnthropicProvider(name, apiKey, baseURL, model) {
         console.log(`❌ No API key configured for ${name}`);
         return false;
     }
-    console.log(`API Key: ${apiKey.substring(0, 20)}...`);
+    console.log(`API key is configured (length: ${apiKey.length})`);
 
     const opts = { apiKey };
     if (baseURL) opts.baseURL = baseURL;
@@ -46,7 +46,7 @@ async function testOpenAICompatible(name, apiKey, baseURL, model) {
         console.log(`❌ No API key configured for ${name}`);
         return false;
     }
-    console.log(`API Key: ${apiKey.substring(0, 20)}...`);
+    console.log(`API key is configured (length: ${apiKey.length})`);
 
     try {
         console.log('Sending test request...');
